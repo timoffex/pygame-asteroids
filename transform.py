@@ -11,11 +11,17 @@ class Transform:
     def add_x(self, dx):
         self._x += dx
 
+    def set_local_x(self, x):
+        self._x = x
+
     def y(self):
         return self._y
 
     def add_y(self, dy):
         self._y += dy
+
+    def set_local_y(self, y):
+        self._y = y
 
     def angle(self):
         return self._angle

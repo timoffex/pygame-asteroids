@@ -55,6 +55,22 @@ class Spaceship:
             self._body.velocity_y -= delta_time * s / 1000
 
 
+class Asteroid:
+    def __init__(self, physics: PhysicsSystem, graphics: RenderingSystem):
+        img = pygame.transform.scale(
+            pygame.image.load("images/asteroid.png").convert_alpha(),
+            (50, 50))
+
+        self._transform = Transform()
+        self._sprite = graphics.new_sprite(img, self._transform)
+        self._body = physics.new_circle_body(self._transform, 25)
+
+        self._transform.set_local_x(400)
+        self._transform.set_local_y(300)
+        self._body.velocity_x = 0.01
+        self._body.velocity_y = 0.01
+
+
 if __name__ == "__main__":
     pygame.init()
 
@@ -65,6 +81,7 @@ if __name__ == "__main__":
     inputs = Inputs()
 
     spaceship = Spaceship(physics, graphics)
+    asteroid = Asteroid(physics, graphics)
 
     while True:
         delta_time = pygame.time.delay(20)
