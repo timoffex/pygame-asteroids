@@ -33,7 +33,10 @@ class Spaceship:
 
         self._transform = Transform()
         self._sprite = graphics.new_sprite(img, self._transform)
-        self._body = physics.new_circle_body(self._transform, 25)
+        self._body = physics.new_circle_body(
+            transform=self._transform,
+            radius=25,
+            mass=1)
 
     def update(self, inputs: Inputs, delta_time: float):
         if inputs.is_key_down(pygame.K_d):
@@ -56,19 +59,24 @@ class Spaceship:
 
 
 class Asteroid:
-    def __init__(self, physics: PhysicsSystem, graphics: RenderingSystem):
+    def __init__(self, physics: PhysicsSystem, graphics: RenderingSystem,
+                 *, x: float = 400, y: float = 300,
+                 vx: float = 0, vy: float = 0):
         img = pygame.transform.scale(
             pygame.image.load("images/asteroid.png").convert_alpha(),
             (50, 50))
 
         self._transform = Transform()
         self._sprite = graphics.new_sprite(img, self._transform)
-        self._body = physics.new_circle_body(self._transform, 25)
+        self._body = physics.new_circle_body(
+            transform=self._transform,
+            radius=25,
+            mass=5)
 
-        self._transform.set_local_x(400)
-        self._transform.set_local_y(300)
-        self._body.velocity_x = 0.01
-        self._body.velocity_y = 0.01
+        self._transform.set_local_x(x)
+        self._transform.set_local_y(y)
+        self._body.velocity_x = vx
+        self._body.velocity_y = vy
 
 
 if __name__ == "__main__":
@@ -81,7 +89,8 @@ if __name__ == "__main__":
     inputs = Inputs()
 
     spaceship = Spaceship(physics, graphics)
-    asteroid = Asteroid(physics, graphics)
+    asteroid1 = Asteroid(physics, graphics, x=300, y=300, vx=0.01, vy=0.01)
+    asteroid2 = Asteroid(physics, graphics, x=500, y=300, vx=-0.01, vy=0.01)
 
     while True:
         delta_time = pygame.time.delay(20)
