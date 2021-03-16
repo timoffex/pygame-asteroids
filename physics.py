@@ -1,5 +1,6 @@
 import itertools
 
+from game_object import GameObject
 from transform import Transform
 
 
@@ -15,7 +16,8 @@ class PhysicsBody:
 
     """
     def __init__(self, physics_system, *,
-                 mass: float, transform: Transform):
+                 mass: float,
+                 transform: Transform):
         self._system = physics_system
         self.transform = transform
         self.velocity_x = 0
@@ -46,6 +48,10 @@ class PhysicsBody:
     def kinetic_energy(self):
         """Computes the kinetic energy of the physics body."""
         return 0.5 * self.mass * (self.velocity_x ** 2 + self.velocity_y ** 2)
+
+
+def add_physics_component(go: GameObject, body: PhysicsBody):
+    go.add_destroy_hook(lambda: body.disable())
 
 
 class _PhysicsCircleBody(PhysicsBody):

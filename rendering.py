@@ -1,6 +1,7 @@
 import math
 import pygame
 
+from game_object import GameObject
 from transform import Transform
 
 
@@ -39,6 +40,10 @@ class Sprite:
                  img_rotated.get_rect().centery)
 
         screen.blit(img_rotated, (x + off_x, y + off_y))
+
+
+def add_sprite_component(go: GameObject, sprite: Sprite):
+    go.add_destroy_hook(lambda: sprite.disable())
 
 
 class RenderingSystem:
