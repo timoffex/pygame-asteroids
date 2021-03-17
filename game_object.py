@@ -33,6 +33,7 @@ class GameObject:
         self._system = game_object_system
         self._update_hooks = []
         self._destroy_hooks = []
+        self._is_destroyed = False
 
         self._parent = None
 
@@ -46,13 +47,18 @@ class GameObject:
         self._destroy_hooks.remove(hook)
 
     def update(self, delta_time: float):
-        for hook in self._update_hooks:
+        hooks = list(self._update_hooks)
+        for hook in hooks:
             hook(delta_time)
 
     def destroy(self):
+        if self._is_destroyed:
+            return
+
         self._system._game_objects.discard(self)
 
-        for hook in self._destroy_hooks:
+        hooks = list(self._destroy_hooks)
+        for hook in hooks:
             hook()
 
     def set_parent(self, parent: 'GameObject'):
