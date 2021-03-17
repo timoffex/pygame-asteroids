@@ -2,6 +2,22 @@ import itertools
 
 from game_object import GameObject
 from transform import Transform
+from typing import Protocol
+
+
+class Collision:
+    """An immutable data type containing information about a collision
+    between one physics body and another.
+
+    """
+    def __init__(self, *, body_self: 'PhysicsBody', body_other: 'PhysicsBody'):
+        self.body_self = body_self
+        self.body_other = body_other
+
+
+class CollisionHook(Protocol):
+    """Protocol for physics collision hooks."""
+    def __call__(self, collision: Collision) -> None: ...
 
 
 class PhysicsBody:
@@ -19,6 +35,7 @@ class PhysicsBody:
                  mass: float,
                  transform: Transform):
         self._system = physics_system
+        self._collision_hooks: set[CollisionHook] = set()
         self.transform = transform
         self.velocity_x = 0
         self.velocity_y = 0
@@ -26,11 +43,11 @@ class PhysicsBody:
 
     def disable(self):
         """Removes this physics body from the simulation."""
-        self.physics_system._objects.remove(self)
+        self._system._objects.discard(self)
 
     def enable(self):
         """Adds this physics body to the simulation."""
-        self.physics_system._objects.add(self)
+        self._system._objects.add(self)
 
     def add_impulse(self, impulse: (float, float)):
         """Applies an impulse to the physics body.
@@ -48,6 +65,13 @@ class PhysicsBody:
     def kinetic_energy(self):
         """Computes the kinetic energy of the physics body."""
         return 0.5 * self.mass * (self.velocity_x ** 2 + self.velocity_y ** 2)
+
+    def add_collision_hook(self, hook: CollisionHook):
+        """Registers a function that runs whenever this body collides with
+        another.
+
+        """
+        self._collision_hooks.add(hook)
 
 
 def add_physics_component(go: GameObject, body: PhysicsBody):
@@ -90,7 +114,7 @@ class PhysicsSystem:
 
     """
     def __init__(self):
-        self._objects = set()
+        self._objects: set[PhysicsBody] = set()
 
     def new_circle_body(self, *,
                         mass: float,
@@ -110,6 +134,8 @@ class PhysicsSystem:
     def update(self, delta_time: float):
         # Detect collisions
         # TODO: Construct a quadtree
+
+        hooks = set()
 
         overlapping_pairs = filter(
             lambda pair: pair[0].overlaps(pair[1]),
@@ -149,10 +175,22 @@ class PhysicsSystem:
             obj1.add_impulse((dx * t, dy * t))
             obj2.add_impulse((-dx * t, -dy * t))
 
+            collision1 = Collision(body_self=obj1, body_other=obj2)
+            for hook1 in obj1._collision_hooks:
+                hooks.add(lambda: hook1(collision=collision1))
+
+            collision2 = Collision(body_self=obj2, body_other=obj1)
+            for hook2 in obj2._collision_hooks:
+                hooks.add(lambda: hook2(collision=collision2))
+
         # Apply velocities
         for obj in self._objects:
             obj.transform.add_x(obj.velocity_x * delta_time)
             obj.transform.add_y(obj.velocity_y * delta_time)
+
+        # Run hooks
+        for hook in hooks:
+            hook()
 
     def kinetic_energy(self) -> float:
         """Computes the total kinetic energy of all physics objects."""

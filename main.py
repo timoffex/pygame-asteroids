@@ -3,7 +3,7 @@ import pygame
 import pygame.gfxdraw
 
 from game_object import GameObject, GameObjectSystem
-from physics import PhysicsBody, PhysicsSystem, add_physics_component
+from physics import PhysicsBody, PhysicsSystem, Collision, add_physics_component
 from rendering import RenderingSystem, add_sprite_component
 from transform import Transform
 
@@ -82,6 +82,12 @@ def make_bullet(game: GameSystems, *,
     speed = 0.1
     body.velocity_x = vx + speed * math.cos(angle)
     body.velocity_y = vy - speed * math.sin(angle)
+
+    def on_collision(collision: Collision):
+        print("Bullet hit something!", go)
+        go.destroy()
+
+    body.add_collision_hook(on_collision)
 
     return go
 

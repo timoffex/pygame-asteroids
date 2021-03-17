@@ -22,7 +22,7 @@ class Sprite:
         """Temporarily removes this sprite from the rendering system.
 
         Use this to stop the sprite from getting drawn."""
-        self._system._sprites.remove(self)
+        self._system._sprites.discard(self)
 
     def enable(self):
         """Adds the sprite back to the rendering system."""

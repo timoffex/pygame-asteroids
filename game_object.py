@@ -50,7 +50,7 @@ class GameObject:
             hook(delta_time)
 
     def destroy(self):
-        self._system._game_objects.remove(self)
+        self._system._game_objects.discard(self)
 
         for hook in self._destroy_hooks:
             hook()
