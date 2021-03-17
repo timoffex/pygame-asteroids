@@ -54,6 +54,11 @@ class GameSystems:
         self.game_objects = GameObjectSystem()
 
 
+class Hittable:
+    """Base class for objects that can be hit by a weapon."""
+    def hit(self): ...
+
+
 def make_bullet(game: GameSystems, *,
                 x: float,
                 y: float,
@@ -84,8 +89,14 @@ def make_bullet(game: GameSystems, *,
     body.velocity_y = vy - speed * math.sin(angle)
 
     def on_collision(collision: Collision):
-        print("Bullet hit something!", go)
-        go.destroy()
+        hittable: Hittable
+        hittable = next((x for x in collision.body_other.get_data()
+                         if isinstance(x, Hittable)), None)
+
+        if hittable:
+            print("Bullet hit something hittable!", go)
+            hittable.hit()
+            go.destroy()
 
     body.add_collision_hook(on_collision)
 
@@ -197,6 +208,19 @@ def make_asteroid(game: GameSystems, *,
     transform.set_local_y(y)
     body.velocity_x = vx
     body.velocity_y = vy
+
+    class AsteroidHittable(Hittable):
+        def __init__(self):
+            self._num_hits = 0
+
+        def hit(self):
+            print("Asteroid got hit!")
+            self._num_hits += 1
+
+            if self._num_hits >= 10:
+                go.destroy()
+
+    body.add_data(AsteroidHittable())
 
     return go
 

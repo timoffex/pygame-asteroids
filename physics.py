@@ -2,7 +2,7 @@ import itertools
 
 from game_object import GameObject
 from transform import Transform
-from typing import Protocol
+from typing import Any, Protocol
 
 
 class Collision:
@@ -36,6 +36,7 @@ class PhysicsBody:
                  transform: Transform):
         self._system = physics_system
         self._collision_hooks: set[CollisionHook] = set()
+        self._data = list()
         self.transform = transform
         self.velocity_x = 0
         self.velocity_y = 0
@@ -72,6 +73,18 @@ class PhysicsBody:
 
         """
         self._collision_hooks.add(hook)
+
+    def add_data(self, data: Any):
+        """Adds data to the physics object.
+
+        Data can be any object and order is preserved.
+
+        """
+        self._data.append(data)
+
+    def get_data(self) -> list[Any]:
+        """Returns a copy of the data associated to this physics object."""
+        return list(self._data)
 
 
 def add_physics_component(go: GameObject, body: PhysicsBody):
