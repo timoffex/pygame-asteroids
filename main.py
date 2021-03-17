@@ -1,6 +1,5 @@
 import math
 import pygame
-import pygame.gfxdraw
 
 from game_object import GameObject, GameObjectSystem
 from physics import PhysicsBody, PhysicsSystem, Collision, add_physics_component
@@ -16,7 +15,6 @@ class Inputs:
     functions.
 
     """
-
     def __init__(self):
         self._did_quit = False
 
@@ -46,7 +44,6 @@ class Inputs:
 
 class GameSystems:
     """A container object to keep track of all game systems."""
-
     def __init__(self):
         self.physics = PhysicsSystem()
         self.graphics = RenderingSystem()
@@ -56,10 +53,12 @@ class GameSystems:
 
 class Hittable:
     """Base class for objects that can be hit by a weapon."""
-    def hit(self): ...
+    def hit(self):
+        ...
 
 
-def make_bullet(game: GameSystems, *,
+def make_bullet(game: GameSystems,
+                *,
                 x: float,
                 y: float,
                 angle: float,
@@ -68,8 +67,7 @@ def make_bullet(game: GameSystems, *,
     go = game.game_objects.new_object()
 
     img = pygame.transform.scale(
-        pygame.image.load("images/asteroid.png").convert_alpha(),
-        (5, 5))
+        pygame.image.load("images/asteroid.png").convert_alpha(), (5, 5))
 
     transform = Transform()
     transform.set_local_x(x)
@@ -78,10 +76,9 @@ def make_bullet(game: GameSystems, *,
 
     add_sprite_component(go, game.graphics.new_sprite(img, transform))
 
-    body = game.physics.new_circle_body(
-        transform=transform,
-        radius=2.5,
-        mass=0.1)
+    body = game.physics.new_circle_body(transform=transform,
+                                        radius=2.5,
+                                        mass=0.1)
     add_physics_component(go, body)
 
     speed = 0.1
@@ -104,10 +101,8 @@ def make_bullet(game: GameSystems, *,
 
 
 class Guns:
-    def __init__(self, game: GameSystems, *,
-                 shooting_transform: Transform,
-                 shooting_body: PhysicsBody,
-                 firing_delay_ms: float):
+    def __init__(self, game: GameSystems, *, shooting_transform: Transform,
+                 shooting_body: PhysicsBody, firing_delay_ms: float):
         self._game = game
         self._shooting_transform = shooting_transform
         self._shooting_body = shooting_body
@@ -120,13 +115,12 @@ class Guns:
 
     def fire(self):
         self._last_shot_time = pygame.time.get_ticks()
-        make_bullet(
-            self._game,
-            x=self._shooting_transform.x(),
-            y=self._shooting_transform.y(),
-            angle=self._shooting_transform.angle(),
-            vx=self._shooting_body.velocity_x,
-            vy=self._shooting_body.velocity_y)
+        make_bullet(self._game,
+                    x=self._shooting_transform.x(),
+                    y=self._shooting_transform.y(),
+                    angle=self._shooting_transform.angle(),
+                    vx=self._shooting_body.velocity_x,
+                    vy=self._shooting_body.velocity_y)
 
 
 def make_spaceship(game: GameSystems) -> GameObject:
@@ -135,15 +129,11 @@ def make_spaceship(game: GameSystems) -> GameObject:
     img = pygame.transform.rotate(
         pygame.transform.scale(
             pygame.image.load("images/spaceship.png").convert_alpha(),
-            (50, 50)),
-        -90)
+            (50, 50)), -90)
 
     transform = Transform()
     sprite = game.graphics.new_sprite(img, transform)
-    body = game.physics.new_circle_body(
-        transform=transform,
-        radius=25,
-        mass=1)
+    body = game.physics.new_circle_body(transform=transform, radius=25, mass=1)
 
     # Register the sprite and physics body as components so that they
     # get disabled when the object is destroyed
@@ -181,7 +171,8 @@ def make_spaceship(game: GameSystems) -> GameObject:
     return go
 
 
-def make_asteroid(game: GameSystems, *,
+def make_asteroid(game: GameSystems,
+                  *,
                   x: float = 400,
                   y: float = 300,
                   vx: float = 0,
@@ -189,15 +180,11 @@ def make_asteroid(game: GameSystems, *,
     go = game.game_objects.new_object()
 
     img = pygame.transform.scale(
-        pygame.image.load("images/asteroid.png").convert_alpha(),
-        (50, 50))
+        pygame.image.load("images/asteroid.png").convert_alpha(), (50, 50))
 
     transform = Transform()
     sprite = game.graphics.new_sprite(img, transform)
-    body = game.physics.new_circle_body(
-        transform=transform,
-        radius=25,
-        mass=5)
+    body = game.physics.new_circle_body(transform=transform, radius=25, mass=5)
 
     # Register the sprite and physics body as components so that they
     # get disabled when the object is destroyed
