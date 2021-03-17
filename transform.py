@@ -28,3 +28,6 @@ class Transform:
 
     def rotate(self, radians):
         self._angle += radians
+
+    def set_local_angle(self, radians):
+        self._angle = radians

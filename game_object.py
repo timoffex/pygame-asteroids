@@ -5,6 +5,7 @@ class UpdateHook(Protocol):
     """Protocol for GameObject update hooks."""
     def __call__(self, update_hook: float) -> None: ...
 
+
 class DestroyHook(Protocol):
     """Protocol for GameObject destroy hooks."""
     def __call__(self) -> None: ...
@@ -21,6 +22,11 @@ class GameObject:
     stop after it is destroyed. You can also add a hook to detect when
     the object is destroyed.
 
+    A GameObject can have a parent GameObject, in which case it is
+    destroyed if the parent is destroyed. This is useful for objects
+    that are logically "part" of another object, like the gun system
+    on a spaceship.
+
     """
 
     def __init__(self, game_object_system):
@@ -28,11 +34,16 @@ class GameObject:
         self._update_hooks = []
         self._destroy_hooks = []
 
+        self._parent = None
+
     def add_update_hook(self, hook: UpdateHook):
         self._update_hooks.append(hook)
 
     def add_destroy_hook(self, hook: DestroyHook):
         self._destroy_hooks.append(hook)
+
+    def remove_destroy_hook(self, hook):
+        self._destroy_hooks.remove(hook)
 
     def update(self, delta_time: float):
         for hook in self._update_hooks:
@@ -43,6 +54,18 @@ class GameObject:
 
         for hook in self._destroy_hooks:
             hook()
+
+    def set_parent(self, parent: 'GameObject'):
+        """Sets the parent of this GameObject, causing it to be destroyed if
+        the parent is destroyed.
+
+        """
+        if self._parent:
+            self._parent.remove_destroy_hook(self.destroy)
+
+        self._parent = parent
+        if self._parent:
+            self._parent.add_destroy_hook(self.destroy)
 
 
 class GameObjectSystem:
@@ -55,5 +78,8 @@ class GameObjectSystem:
         return go
 
     def update(self, delta_time: float):
-        for obj in self._game_objects:
+        # Make a copy of self._game_objects in case new objects are
+        # created or old objects are destroyed during update
+        game_objects = set(self._game_objects)
+        for obj in game_objects:
             obj.update(delta_time=delta_time)

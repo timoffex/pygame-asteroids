@@ -3,7 +3,7 @@ import pygame
 import pygame.gfxdraw
 
 from game_object import GameObject, GameObjectSystem
-from physics import PhysicsSystem, add_physics_component
+from physics import PhysicsBody, PhysicsSystem, add_physics_component
 from rendering import RenderingSystem, add_sprite_component
 from transform import Transform
 
@@ -54,6 +54,64 @@ class GameSystems:
         self.game_objects = GameObjectSystem()
 
 
+def make_bullet(game: GameSystems, *,
+                x: float,
+                y: float,
+                angle: float,
+                vx: float = 0,
+                vy: float = 0) -> GameObject:
+    go = game.game_objects.new_object()
+
+    img = pygame.transform.scale(
+        pygame.image.load("images/asteroid.png").convert_alpha(),
+        (5, 5))
+
+    transform = Transform()
+    transform.set_local_x(x)
+    transform.set_local_y(y)
+    transform.set_local_angle(angle)
+
+    add_sprite_component(go, game.graphics.new_sprite(img, transform))
+
+    body = game.physics.new_circle_body(
+        transform=transform,
+        radius=2.5,
+        mass=0.1)
+    add_physics_component(go, body)
+
+    speed = 0.1
+    body.velocity_x = vx + speed * math.cos(angle)
+    body.velocity_y = vy - speed * math.sin(angle)
+
+    return go
+
+
+class Guns:
+    def __init__(self, game: GameSystems, *,
+                 shooting_transform: Transform,
+                 shooting_body: PhysicsBody,
+                 firing_delay_ms: float):
+        self._game = game
+        self._shooting_transform = shooting_transform
+        self._shooting_body = shooting_body
+        self._last_shot_time = -math.inf
+        self._firing_delay_ms = firing_delay_ms
+
+    def is_ready_to_fire(self):
+        return (pygame.time.get_ticks() >
+                self._last_shot_time + self._firing_delay_ms)
+
+    def fire(self):
+        self._last_shot_time = pygame.time.get_ticks()
+        make_bullet(
+            self._game,
+            x=self._shooting_transform.x(),
+            y=self._shooting_transform.y(),
+            angle=self._shooting_transform.angle(),
+            vx=self._shooting_body.velocity_x,
+            vy=self._shooting_body.velocity_y)
+
+
 def make_spaceship(game: GameSystems) -> GameObject:
     go = game.game_objects.new_object()
 
@@ -75,6 +133,11 @@ def make_spaceship(game: GameSystems) -> GameObject:
     add_physics_component(go, body)
     add_sprite_component(go, sprite)
 
+    guns = Guns(game,
+                shooting_transform=transform,
+                shooting_body=body,
+                firing_delay_ms=200)
+
     def update(delta_time: float) -> None:
         if game.inputs.is_key_down(pygame.K_d):
             transform.rotate(-delta_time / 100)
@@ -93,6 +156,9 @@ def make_spaceship(game: GameSystems) -> GameObject:
             c = math.cos(transform.angle())
             body.velocity_x += delta_time * c / 1000
             body.velocity_y -= delta_time * s / 1000
+
+        if game.inputs.is_key_down(pygame.K_SPACE) and guns.is_ready_to_fire():
+            guns.fire()
 
     go.add_update_hook(update)
     return go

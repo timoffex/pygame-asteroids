@@ -35,9 +35,11 @@ class Sprite:
             self._surface, self._transform.angle() * 180 / math.pi)
 
         off_x = (self._surface.get_rect().centerx -
-                 img_rotated.get_rect().centerx)
+                 img_rotated.get_rect().centerx -
+                 self._surface.get_rect().width / 2)
         off_y = (self._surface.get_rect().centery -
-                 img_rotated.get_rect().centery)
+                 img_rotated.get_rect().centery -
+                 self._surface.get_rect().height / 2)
 
         screen.blit(img_rotated, (x + off_x, y + off_y))
 
