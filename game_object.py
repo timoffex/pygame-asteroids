@@ -3,12 +3,14 @@ from typing import Protocol
 
 class UpdateHook(Protocol):
     """Protocol for GameObject update hooks."""
-    def __call__(self, update_hook: float) -> None: ...
+    def __call__(self, update_hook: float) -> None:
+        ...
 
 
 class DestroyHook(Protocol):
     """Protocol for GameObject destroy hooks."""
-    def __call__(self) -> None: ...
+    def __call__(self) -> None:
+        ...
 
 
 class GameObject:
@@ -28,7 +30,6 @@ class GameObject:
     on a spaceship.
 
     """
-
     def __init__(self, game_object_system):
         self._system = game_object_system
         self._update_hooks = []
@@ -39,6 +40,9 @@ class GameObject:
 
     def add_update_hook(self, hook: UpdateHook):
         self._update_hooks.append(hook)
+
+    def remove_update_hook(self, hook: UpdateHook):
+        self._update_hooks.remove(hook)
 
     def add_destroy_hook(self, hook: DestroyHook):
         self._destroy_hooks.append(hook)

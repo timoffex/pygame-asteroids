@@ -1,7 +1,9 @@
 import math
 import pygame
 
+from game_time import GameTime
 from game_object import GameObject, GameObjectSystem
+from game_object_coroutine import GameObjectCoroutine, resume_after
 from physics import PhysicsBody, PhysicsSystem, Collision, add_physics_component
 from rendering import RenderingSystem, add_sprite_component
 from transform import Transform
@@ -49,6 +51,7 @@ class GameSystems:
         self.graphics = RenderingSystem()
         self.inputs = Inputs()
         self.game_objects = GameObjectSystem()
+        self.time = GameTime()
 
 
 class Hittable:
@@ -63,7 +66,8 @@ def make_bullet(game: GameSystems,
                 y: float,
                 angle: float,
                 vx: float = 0,
-                vy: float = 0) -> GameObject:
+                vy: float = 0,
+                lifetime_ms: float = 10000) -> GameObject:
     go = game.game_objects.new_object()
 
     img = pygame.transform.scale(
@@ -96,6 +100,12 @@ def make_bullet(game: GameSystems,
             go.destroy()
 
     body.add_collision_hook(on_collision)
+
+    def destroy_after_lifetime():
+        yield resume_after(game.time, delay_ms=lifetime_ms)
+        go.destroy()
+
+    GameObjectCoroutine(go, destroy_after_lifetime()).start()
 
     return go
 
@@ -143,7 +153,7 @@ def make_spaceship(game: GameSystems) -> GameObject:
     guns = Guns(game,
                 shooting_transform=transform,
                 shooting_body=body,
-                firing_delay_ms=200)
+                firing_delay_ms=50)
 
     def update(delta_time: float) -> None:
         if game.inputs.is_key_down(pygame.K_d):
@@ -231,6 +241,7 @@ if __name__ == "__main__":
             break
 
         game.game_objects.update(delta_time)
+        game.time.run_callbacks()
         game.physics.update(delta_time)
 
         # Clear the screen
