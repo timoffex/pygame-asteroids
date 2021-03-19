@@ -216,16 +216,41 @@ def make_asteroid(game: GameSystems,
 
             if self._num_hits >= 10:
                 go.destroy()
+                make_explosion(game, x=transform.x(), y=transform.y())
 
     body.add_data(AsteroidHittable())
 
     return go
 
 
+def make_explosion(game: GameSystems, x: float, y: float):
+    go = game.game_objects.new_object()
+    transform = Transform()
+    transform.set_local_x(x)
+    transform.set_local_y(y)
+
+    def animation():
+        for n in range(25):
+            sprite = game.graphics.new_sprite(explosion_images[n], transform)
+            remove_component = add_sprite_component(go, sprite)
+            yield resume_after(game.time, delay_ms=20)
+            remove_component()
+            sprite.disable()
+        go.destroy()
+
+    GameObjectCoroutine(go, animation()).start()
+
+
 if __name__ == "__main__":
     pygame.init()
 
     screen = pygame.display.set_mode((800, 600))
+
+    global explosion_images
+    explosion_images = [
+        pygame.image.load("images/explosion_%d.png" % n).convert_alpha()
+        for n in range(25)
+    ]
 
     game = GameSystems()
 

@@ -43,7 +43,12 @@ class Sprite:
 
 
 def add_sprite_component(go: GameObject, sprite: Sprite):
-    go.add_destroy_hook(lambda: sprite.disable())
+    def hook():
+        sprite.disable()
+    go.add_destroy_hook(hook)
+
+    # TODO: Sprite component super jank, fix
+    return lambda: go.remove_destroy_hook(hook)
 
 
 class RenderingSystem:
