@@ -1,84 +1,101 @@
 import math
+import pinject
 import pygame
 
-from game_env import GameEnv
-from game_object import GameObject
+from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
+from game_time import GameTime
 from hittable import Hittable
+from inputs import Inputs
 from transform import Transform
-from physics import PhysicsBody, Collision, add_physics_component
-from rendering import add_sprite_component
+from physics import PhysicsSystem, PhysicsBody, Collision, add_physics_component
+from rendering import RenderingSystem, add_sprite_component
 
 
-def make_bullet(
-    game: GameEnv,
-    *,
-    x: float,
-    y: float,
-    angle: float,
-    vx: float = 0,
-    vy: float = 0,
-    lifetime_ms: float = 10000
-) -> GameObject:
-    go = game.game_objects.new_object()
+class BulletFactory:
+    def __init__(
+        self,
+        game_time: GameTime,
+        physics_system: PhysicsSystem,
+        rendering_system: RenderingSystem,
+        game_object_system: GameObjectSystem,
+    ):
+        self._game_time = game_time
+        self._physics_system = physics_system
+        self._rendering_system = rendering_system
+        self._game_object_system = game_object_system
+        pass
 
-    img = pygame.transform.scale(
-        pygame.image.load("images/asteroid.png").convert_alpha(), (5, 5)
-    )
+    def __call__(
+        self,
+        *,
+        x: float,
+        y: float,
+        angle: float,
+        vx: float = 0,
+        vy: float = 0,
+        lifetime_ms: float = 10000
+    ) -> GameObject:
+        go = self._game_object_system.new_object()
 
-    transform = Transform()
-    transform.set_local_x(x)
-    transform.set_local_y(y)
-    transform.set_local_angle(angle)
-
-    add_sprite_component(go, game.graphics.new_sprite(img, transform))
-
-    body = game.physics.new_circle_body(
-        transform=transform, radius=2.5, mass=0.1
-    )
-    add_physics_component(go, body)
-
-    speed = 0.1
-    body.velocity_x = vx + speed * math.cos(angle)
-    body.velocity_y = vy - speed * math.sin(angle)
-
-    def on_collision(collision: Collision):
-        hittable: Hittable
-        hittable = next(
-            (
-                x
-                for x in collision.body_other.get_data()
-                if isinstance(x, Hittable)
-            ),
-            None,
+        img = pygame.transform.scale(
+            pygame.image.load("images/asteroid.png").convert_alpha(), (5, 5)
         )
 
-        if hittable:
-            print("Bullet hit something hittable!", go)
-            hittable.hit()
+        transform = Transform()
+        transform.set_local_x(x)
+        transform.set_local_y(y)
+        transform.set_local_angle(angle)
+
+        add_sprite_component(
+            go, self._rendering_system.new_sprite(img, transform)
+        )
+
+        body = self._physics_system.new_circle_body(
+            transform=transform, radius=2.5, mass=0.1
+        )
+        add_physics_component(go, body)
+
+        speed = 0.1
+        body.velocity_x = vx + speed * math.cos(angle)
+        body.velocity_y = vy - speed * math.sin(angle)
+
+        def on_collision(collision: Collision):
+            hittable: Hittable
+            hittable = next(
+                (
+                    x
+                    for x in collision.body_other.get_data()
+                    if isinstance(x, Hittable)
+                ),
+                None,
+            )
+
+            if hittable:
+                print("Bullet hit something hittable!", go)
+                hittable.hit()
+                go.destroy()
+
+        body.add_collision_hook(on_collision)
+
+        def destroy_after_lifetime():
+            yield resume_after(self._game_time, delay_ms=lifetime_ms)
             go.destroy()
 
-    body.add_collision_hook(on_collision)
+        GameObjectCoroutine(go, destroy_after_lifetime()).start()
 
-    def destroy_after_lifetime():
-        yield resume_after(game.time, delay_ms=lifetime_ms)
-        go.destroy()
-
-    GameObjectCoroutine(go, destroy_after_lifetime()).start()
-
-    return go
+        return go
 
 
 class Guns:
     def __init__(
         self,
-        game: GameEnv,
-        *,
+        bullet_factory: BulletFactory,
         shooting_transform: Transform,
         shooting_body: PhysicsBody,
-        firing_delay_ms: float
+        firing_delay_ms: float,
     ):
-        self._game = game
+        self._bullet_factory = bullet_factory
         self._shooting_transform = shooting_transform
         self._shooting_body = shooting_body
         self._last_shot_time = -math.inf
@@ -92,8 +109,7 @@ class Guns:
 
     def fire(self):
         self._last_shot_time = pygame.time.get_ticks()
-        make_bullet(
-            self._game,
+        self._bullet_factory(
             x=self._shooting_transform.x(),
             y=self._shooting_transform.y(),
             angle=self._shooting_transform.angle(),
@@ -102,55 +118,95 @@ class Guns:
         )
 
 
-def make_spaceship(game: GameEnv, x: float = 0, y: float = 0) -> GameObject:
-    go = game.game_objects.new_object()
+class GunsFactory:
+    @pinject.copy_args_to_internal_fields
+    def __init__(self, bullet_factory: BulletFactory):
+        pass
 
-    img = pygame.transform.rotate(
-        pygame.transform.scale(
-            pygame.image.load("images/spaceship.png").convert_alpha(), (50, 50)
-        ),
-        -90,
-    )
+    def __call__(
+        self,
+        shooting_transform: Transform,
+        shooting_body: PhysicsBody,
+        firing_delay_ms: float,
+    ) -> Guns:
+        return Guns(
+            bullet_factory=self._bullet_factory,
+            shooting_transform=shooting_transform,
+            shooting_body=shooting_body,
+            firing_delay_ms=firing_delay_ms,
+        )
 
-    transform = Transform()
-    transform.set_local_x(x)
-    transform.set_local_y(y)
-    sprite = game.graphics.new_sprite(img, transform)
-    body = game.physics.new_circle_body(transform=transform, radius=25, mass=1)
 
-    # Register the sprite and physics body as components so that they
-    # get disabled when the object is destroyed
-    add_physics_component(go, body)
-    add_sprite_component(go, sprite)
+class SpaceshipFactory:
+    def __init__(
+        self,
+        inputs: Inputs,
+        game_object_system: GameObjectSystem,
+        rendering_system: RenderingSystem,
+        physics_system: PhysicsSystem,
+        guns_factory: GunsFactory,
+    ):
+        self._inputs = inputs
+        self._game_object_system = game_object_system
+        self._rendering_system = rendering_system
+        self._physics_system = physics_system
+        self._guns_factory = guns_factory
+        pass
 
-    guns = Guns(
-        game,
-        shooting_transform=transform,
-        shooting_body=body,
-        firing_delay_ms=50,
-    )
+    def __call__(self, x: float = 0, y: float = 0) -> GameObject:
+        go = self._game_object_system.new_object()
 
-    def update(delta_time: float) -> None:
-        if game.inputs.is_key_down(pygame.K_d):
-            transform.rotate(-delta_time / 100)
-        if game.inputs.is_key_down(pygame.K_a):
-            transform.rotate(delta_time / 100)
+        img = pygame.transform.rotate(
+            pygame.transform.scale(
+                pygame.image.load("images/spaceship.png").convert_alpha(),
+                (50, 50),
+            ),
+            -90,
+        )
 
-        if game.inputs.is_key_down(pygame.K_s):
-            # Slow down gradually
-            body.velocity_x *= math.pow(0.8, delta_time / 50)
-            body.velocity_y *= math.pow(0.8, delta_time / 50)
+        transform = Transform()
+        transform.set_local_x(x)
+        transform.set_local_y(y)
+        sprite = self._rendering_system.new_sprite(img, transform)
+        body = self._physics_system.new_circle_body(
+            transform=transform, radius=25, mass=1
+        )
 
-        if game.inputs.is_key_down(pygame.K_w):
-            # Speed up in the direction the ship is facing
+        # Register the sprite and physics body as components so that they
+        # get disabled when the object is destroyed
+        add_physics_component(go, body)
+        add_sprite_component(go, sprite)
 
-            s = math.sin(transform.angle())
-            c = math.cos(transform.angle())
-            body.velocity_x += delta_time * c / 1000
-            body.velocity_y -= delta_time * s / 1000
+        guns = self._guns_factory(
+            shooting_transform=transform,
+            shooting_body=body,
+            firing_delay_ms=50,
+        )
 
-        if game.inputs.is_key_down(pygame.K_SPACE) and guns.is_ready_to_fire():
-            guns.fire()
+        def update(delta_time: float) -> None:
+            if self._inputs.is_key_down(pygame.K_d):
+                transform.rotate(-delta_time / 100)
+            if self._inputs.is_key_down(pygame.K_a):
+                transform.rotate(delta_time / 100)
 
-    go.add_update_hook(update)
-    return go
+            if self._inputs.is_key_down(pygame.K_s):
+                # Slow down gradually
+                body.velocity_x *= math.pow(0.8, delta_time / 50)
+                body.velocity_y *= math.pow(0.8, delta_time / 50)
+
+            if self._inputs.is_key_down(pygame.K_w):
+                # Speed up in the direction the ship is facing
+
+                s = math.sin(transform.angle())
+                c = math.cos(transform.angle())
+                body.velocity_x += delta_time * c / 1000
+                body.velocity_y -= delta_time * s / 1000
+
+            if (
+                self._inputs.is_key_down(pygame.K_SPACE)
+                and guns.is_ready_to_fire()
+            ):
+                guns.fire()
+
+        go.add_update_hook(update)
+        return go
