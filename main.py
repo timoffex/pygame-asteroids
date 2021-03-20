@@ -2,59 +2,12 @@ import math
 import pygame
 import random
 
-from game_time import GameTime
-from game_object import GameObject, GameObjectSystem
+from game_env import GameEnv
+from game_object import GameObject
 from game_object_coroutine import GameObjectCoroutine, resume_after
-from physics import PhysicsBody, PhysicsSystem, Collision, add_physics_component
-from rendering import RenderingSystem, add_sprite_component
+from physics import PhysicsBody, Collision, add_physics_component
+from rendering import add_sprite_component
 from transform import Transform
-
-
-class Inputs:
-    """Class that keeps track of all user input information on every frame.
-
-    This class is responsible for calling `pygame.event.get()` and no
-    other code should touch the pygame.event or the pygame.key
-    functions.
-
-    """
-
-    def __init__(self):
-        self._did_quit = False
-
-    def did_quit(self):
-        """Returns whether the application received the QUIT signal."""
-        return self._did_quit
-
-    def is_key_down(self, key_code):
-        """Returns whether the specified key is currently pressed.
-
-        The key_code should be one of the `pygame.K_` constants, such as
-        pygame.K_a (the A key) or pygame.K_SPACE (the space bar).
-
-        """
-        return pygame.key.get_pressed()[key_code]
-
-    def start_new_frame(self):
-        """Processes events at the start of a new frame.
-
-        Call this before doing any extra processing for the frame.
-
-        """
-        for event in pygame.event.get():
-            if event.type is pygame.QUIT:
-                self._did_quit = True
-
-
-class GameSystems:
-    """A container object to keep track of all game systems."""
-
-    def __init__(self):
-        self.physics = PhysicsSystem()
-        self.graphics = RenderingSystem()
-        self.inputs = Inputs()
-        self.game_objects = GameObjectSystem()
-        self.time = GameTime()
 
 
 class Hittable:
@@ -65,7 +18,7 @@ class Hittable:
 
 
 def make_bullet(
-    game: GameSystems,
+    game: GameEnv,
     *,
     x: float,
     y: float,
@@ -126,7 +79,7 @@ def make_bullet(
 class Guns:
     def __init__(
         self,
-        game: GameSystems,
+        game: GameEnv,
         *,
         shooting_transform: Transform,
         shooting_body: PhysicsBody,
@@ -156,7 +109,7 @@ class Guns:
         )
 
 
-def make_spaceship(game: GameSystems, x: float = 0, y: float = 0) -> GameObject:
+def make_spaceship(game: GameEnv, x: float = 0, y: float = 0) -> GameObject:
     go = game.game_objects.new_object()
 
     img = pygame.transform.rotate(
@@ -211,7 +164,7 @@ def make_spaceship(game: GameSystems, x: float = 0, y: float = 0) -> GameObject:
 
 
 def make_asteroid(
-    game: GameSystems,
+    game: GameEnv,
     *,
     x: float = 400,
     y: float = 300,
@@ -256,7 +209,7 @@ def make_asteroid(
 
 
 def make_asteroid_generator(
-    game: GameSystems,
+    game: GameEnv,
     x: float,
     y: float,
     width: float,
@@ -281,7 +234,7 @@ def make_asteroid_generator(
     return go
 
 
-def make_explosion(game: GameSystems, x: float, y: float):
+def make_explosion(game: GameEnv, x: float, y: float):
     go = game.game_objects.new_object()
     transform = Transform()
     transform.set_local_x(x)
@@ -310,7 +263,7 @@ if __name__ == "__main__":
         for n in range(25)
     ]
 
-    game = GameSystems()
+    game = GameEnv()
 
     make_spaceship(game, x=400, y=200)
     make_asteroid_generator(
