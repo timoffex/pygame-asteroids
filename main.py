@@ -6,13 +6,30 @@ from game_object import GameObject
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from hittable import Hittable
 from physics import add_physics_component
-from rendering import add_sprite_component
+from rendering import Text, add_sprite_component
 from spaceship import make_spaceship
 from transform import Transform
 
 
+class Counter:
+    def __init__(self, text: Text, count: int):
+        self._count = 0
+        self._text = text
+        self._text.text = str(self._count)
+
+    @property
+    def count(self):
+        return self._count
+
+    @count.setter
+    def count(self, new_value):
+        self._count = new_value
+        self._text.text = str(self._count)
+
+
 def make_asteroid(
     game: GameEnv,
+    counter: Counter,
     *,
     x: float = 400,
     y: float = 300,
@@ -50,6 +67,7 @@ def make_asteroid(
             if self._num_hits >= 10:
                 go.destroy()
                 make_explosion(game, x=transform.x(), y=transform.y())
+                counter.count += 1
 
     body.add_data(AsteroidHittable())
 
@@ -58,6 +76,7 @@ def make_asteroid(
 
 def make_asteroid_generator(
     game: GameEnv,
+    counter: Counter,
     x: float,
     y: float,
     width: float,
@@ -70,6 +89,7 @@ def make_asteroid_generator(
         while True:
             make_asteroid(
                 game,
+                counter,
                 x=random.uniform(x, x + width),
                 y=random.uniform(y, y + height),
                 vx=random.gauss(0, 0.03),
@@ -113,9 +133,14 @@ if __name__ == "__main__":
 
     game = GameEnv()
 
+    counter_text = game.graphics.new_text(pygame.font.Font(None, 36), "")
+    counter_text.x = 30
+    counter_text.y = 30
+    counter = Counter(counter_text, count=30)
+
     make_spaceship(game, x=400, y=200)
     make_asteroid_generator(
-        game, x=0, y=0, width=800, height=600, interval_ms=3000
+        game, counter, x=0, y=0, width=800, height=600, interval_ms=3000
     )
 
     while True:

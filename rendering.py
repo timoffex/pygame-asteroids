@@ -58,6 +58,50 @@ def add_sprite_component(go: GameObject, sprite: Sprite):
     return lambda: go.remove_destroy_hook(hook)
 
 
+class Text:
+    def __init__(
+        self,
+        rendering_system: "RenderingSystem",
+        text: str,
+        font: pygame.font.Font,
+    ):
+        self._system = rendering_system
+        self._font = font
+        self._text = None
+        self._rendered_text = None
+        self._new_text = text
+        self.x = 0
+        self.y = 0
+        self.color = pygame.Color(255, 255, 255)
+
+    @property
+    def text(self):
+        if self._new_text is not None:
+            return self._new_text
+        return self._text
+
+    @text.setter
+    def text(self, new_value):
+        if new_value != self._text:
+            self._new_text = new_value
+
+    def disable(self):
+        self._system._sprites.discard(self)
+
+    def enable(self):
+        self._system._sprites.add(self)
+
+    def render(self, screen: pygame.Surface):
+        if self._new_text is not None:
+            self._text = self._new_text
+            self._rendered_text = self._font.render(
+                self._text, False, self.color
+            )
+            self._new_text = None
+
+        screen.blit(self._rendered_text, (self.x, self.y))
+
+
 class RenderingSystem:
     def __init__(self):
         self._sprites = set()
@@ -68,6 +112,11 @@ class RenderingSystem:
         sprite = Sprite(self, surface, transform)
         self._sprites.add(sprite)
         return sprite
+
+    def new_text(self, font: pygame.font.Font, text: str):
+        text = Text(self, text, font)
+        self._sprites.add(text)
+        return text
 
     def render(self, screen: pygame.Surface):
         for sprite in self._sprites:
