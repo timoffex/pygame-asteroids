@@ -1,5 +1,6 @@
 class Transform:
     """A mutable object that represents a 2D translation and rotation."""
+
     def __init__(self):
         self._x = 0
         self._y = 0

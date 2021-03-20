@@ -10,13 +10,15 @@ class Collision:
     between one physics body and another.
 
     """
-    def __init__(self, *, body_self: 'PhysicsBody', body_other: 'PhysicsBody'):
+
+    def __init__(self, *, body_self: "PhysicsBody", body_other: "PhysicsBody"):
         self.body_self = body_self
         self.body_other = body_other
 
 
 class CollisionHook(Protocol):
     """Protocol for physics collision hooks."""
+
     def __call__(self, collision: Collision) -> None:
         ...
 
@@ -32,6 +34,7 @@ class PhysicsBody:
     according to its velocity.
 
     """
+
     def __init__(self, physics_system, *, mass: float, transform: Transform):
         self._system = physics_system
         self._collision_hooks: set[CollisionHook] = set()
@@ -64,7 +67,7 @@ class PhysicsBody:
 
     def kinetic_energy(self):
         """Computes the kinetic energy of the physics body."""
-        return 0.5 * self.mass * (self.velocity_x**2 + self.velocity_y**2)
+        return 0.5 * self.mass * (self.velocity_x ** 2 + self.velocity_y ** 2)
 
     def add_collision_hook(self, hook: CollisionHook):
         """Registers a function that runs whenever this body collides with
@@ -96,8 +99,15 @@ class _PhysicsCircleBody(PhysicsBody):
     Do not use this outside of the physics system.
 
     """
-    def __init__(self, physics_system, *, mass: float, transform: Transform,
-                 radius: float):
+
+    def __init__(
+        self,
+        physics_system,
+        *,
+        mass: float,
+        transform: Transform,
+        radius: float
+    ):
         super().__init__(physics_system, mass=mass, transform=transform)
         self._radius = radius
 
@@ -108,7 +118,7 @@ class _PhysicsCircleBody(PhysicsBody):
         dx = self.transform.x() - other.transform.x()
         dy = self.transform.y() - other.transform.y()
 
-        dist_squared = dx**2 + dy**2
+        dist_squared = dx ** 2 + dy ** 2
 
         radii_sum = self.radius() + other.radius()
         radii_sum_squared = radii_sum * radii_sum
@@ -121,19 +131,20 @@ class PhysicsSystem:
     reality-inspired way.
 
     """
+
     def __init__(self):
         self._objects: set[PhysicsBody] = set()
 
-    def new_circle_body(self, *, mass: float, transform: Transform,
-                        radius: float) -> PhysicsBody:
+    def new_circle_body(
+        self, *, mass: float, transform: Transform, radius: float
+    ) -> PhysicsBody:
         """Creates a new PhysicsBody with a circular collider centered at the
         transform.
 
         """
-        body = _PhysicsCircleBody(self,
-                                  transform=transform,
-                                  radius=radius,
-                                  mass=mass)
+        body = _PhysicsCircleBody(
+            self, transform=transform, radius=radius, mass=mass
+        )
         self._objects.add(body)
         return body
 
@@ -143,8 +154,10 @@ class PhysicsSystem:
 
         hooks = set()
 
-        overlapping_pairs = filter(lambda pair: pair[0].overlaps(pair[1]),
-                                   itertools.combinations(self._objects, 2))
+        overlapping_pairs = filter(
+            lambda pair: pair[0].overlaps(pair[1]),
+            itertools.combinations(self._objects, 2),
+        )
         for (obj1, obj2) in overlapping_pairs:
             # Compute collision impulse that is orthogonal to the
             # collision plane and conserves momentum and kinetic
@@ -155,7 +168,7 @@ class PhysicsSystem:
 
             dx = obj1.transform.x() - obj2.transform.x()
             dy = obj1.transform.y() - obj2.transform.y()
-            dist_squared = dx**2 + dy**2
+            dist_squared = dx ** 2 + dy ** 2
 
             if dist_squared == 0:
                 # give up, objects are perfectly overlapping so we
@@ -168,8 +181,12 @@ class PhysicsSystem:
 
             # The multiplier that ensures the bounce preserves kinetic
             # energy
-            t = -(2 * (vx * dx + vy * dy) /
-                  (1 / obj1.mass + 1 / obj2.mass) / dist_squared)
+            t = -(
+                2
+                * (vx * dx + vy * dy)
+                / (1 / obj1.mass + 1 / obj2.mass)
+                / dist_squared
+            )
 
             if t < 0:
                 # The objects were overlapping but moving away from
@@ -180,6 +197,8 @@ class PhysicsSystem:
             obj2.add_impulse((-dx * t, -dy * t))
 
             collision1 = Collision(body_self=obj1, body_other=obj2)
+
+            # TODO: This captures loop variable not its value
             for hook1 in obj1._collision_hooks:
                 hooks.add(lambda: hook1(collision=collision1))
 

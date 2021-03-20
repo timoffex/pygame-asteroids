@@ -2,8 +2,9 @@ from game_object import GameObject
 from game_time import GameTime
 from typing import Callable, Generator, Optional
 
-GameCoroutineGenerator = Generator[Optional['GameYieldInstruction'], float,
-                                   None]
+GameCoroutineGenerator = Generator[
+    Optional["GameYieldInstruction"], float, None
+]
 """A Generator that can be used to create a `GameObjectCoroutine`.
 
 GameObjectCoroutine generators yield either `None` or
@@ -33,8 +34,10 @@ class GameObjectCoroutine:
     running when their GameObject is destroyed.
 
     """
-    def __init__(self, game_object: GameObject,
-                 coroutine: GameCoroutineGenerator):
+
+    def __init__(
+        self, game_object: GameObject, coroutine: GameCoroutineGenerator
+    ):
         """Creates a suspended `GameObjectCoroutine` attached to the
         `game_object`.
 
@@ -58,8 +61,7 @@ class GameObjectCoroutine:
             self._is_suspended = False
 
             if not self._did_start_once:
-                self._run_and_process_yield(
-                    lambda: next(self._coroutine))
+                self._run_and_process_yield(lambda: next(self._coroutine))
                 self._did_start_once = True
 
     def suspend(self):
@@ -80,16 +82,16 @@ class GameObjectCoroutine:
             self.suspend()
             return
 
-        self._run_and_process_yield(
-            lambda: self._coroutine.send(delta_time))
+        self._run_and_process_yield(lambda: self._coroutine.send(delta_time))
 
     def _run_and_process_yield(self, step_coroutine):
         try:
             yield_instruction = step_coroutine()
 
             if yield_instruction is not None:
-                yield_instruction.apply(game_object=self._game_object,
-                                        coroutine=self)
+                yield_instruction.apply(
+                    game_object=self._game_object, coroutine=self
+                )
         except StopIteration:
             self._is_done = True
         except Exception:
@@ -117,6 +119,7 @@ class GameYieldInstruction:
     This class is not meant to be subclassed outside of this library.
 
     """
+
     def apply(self, game_object: GameObject, coroutine: GameObjectCoroutine):
         ...
 
@@ -126,6 +129,7 @@ def resume_after(time: GameTime, delay_ms: float) -> GameYieldInstruction:
     updating until a certain amount of time has passed.
 
     """
+
     def continuation(resume):
         time.run_after_delay(delay_ms=delay_ms, callback=resume)
 
@@ -133,8 +137,8 @@ def resume_after(time: GameTime, delay_ms: float) -> GameYieldInstruction:
 
 
 def resume_later(
-    continuation: Callable[[Callable[[], None]],
-                           None]) -> GameYieldInstruction:
+    continuation: Callable[[Callable[[], None]], None]
+) -> GameYieldInstruction:
     """Returns a GameYieldInstruction that stops the coroutine from
     updating and allows custom code to resume it later.
 

@@ -6,18 +6,18 @@ from typing import Callable
 
 class GameTime:
     """An object that allows scheduling callbacks to run after delays."""
-    def __init__(self):
-        self._sorted_scheduled_events: list['_ScheduledEvent'] = []
 
-    def run_after_delay(self,
-                        delay_ms: float,
-                        callback: Callable[[], None]):
+    def __init__(self):
+        self._sorted_scheduled_events: list["_ScheduledEvent"] = []
+
+    def run_after_delay(self, delay_ms: float, callback: Callable[[], None]):
         """Schedules a callback to run after the specified delay."""
         heapq.heappush(
             self._sorted_scheduled_events,
             _ScheduledEvent(
-                time=pygame.time.get_ticks() + delay_ms,
-                callback=callback))
+                time=pygame.time.get_ticks() + delay_ms, callback=callback
+            ),
+        )
 
     def run_callbacks(self):
         """Runs all callbacks whose time has come."""
