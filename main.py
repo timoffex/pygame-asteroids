@@ -1,5 +1,6 @@
 import math
 import pygame
+import random
 
 from game_time import GameTime
 from game_object import GameObject, GameObjectSystem
@@ -155,7 +156,7 @@ class Guns:
         )
 
 
-def make_spaceship(game: GameSystems) -> GameObject:
+def make_spaceship(game: GameSystems, x: float = 0, y: float = 0) -> GameObject:
     go = game.game_objects.new_object()
 
     img = pygame.transform.rotate(
@@ -166,6 +167,8 @@ def make_spaceship(game: GameSystems) -> GameObject:
     )
 
     transform = Transform()
+    transform.set_local_x(x)
+    transform.set_local_y(y)
     sprite = game.graphics.new_sprite(img, transform)
     body = game.physics.new_circle_body(transform=transform, radius=25, mass=1)
 
@@ -252,6 +255,32 @@ def make_asteroid(
     return go
 
 
+def make_asteroid_generator(
+    game: GameSystems,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    interval_ms: float,
+) -> GameObject:
+    go = game.game_objects.new_object()
+
+    def generate_asteroids():
+        while True:
+            make_asteroid(
+                game,
+                x=random.uniform(x, x + width),
+                y=random.uniform(y, y + height),
+                vx=random.gauss(0, 0.03),
+                vy=random.gauss(0, 0.03),
+            )
+            yield resume_after(time=game.time, delay_ms=interval_ms)
+
+    GameObjectCoroutine(go, generate_asteroids()).start()
+
+    return go
+
+
 def make_explosion(game: GameSystems, x: float, y: float):
     go = game.game_objects.new_object()
     transform = Transform()
@@ -283,9 +312,10 @@ if __name__ == "__main__":
 
     game = GameSystems()
 
-    make_spaceship(game)
-    make_asteroid(game, x=300, y=300, vx=0.01, vy=0.01)
-    make_asteroid(game, x=500, y=300, vx=-0.01, vy=0.01)
+    make_spaceship(game, x=400, y=200)
+    make_asteroid_generator(
+        game, x=0, y=0, width=800, height=600, interval_ms=3000
+    )
 
     while True:
         delta_time = pygame.time.delay(20)
