@@ -196,15 +196,20 @@ class PhysicsSystem:
             obj1.add_impulse((dx * t, dy * t))
             obj2.add_impulse((-dx * t, -dy * t))
 
-            collision1 = Collision(body_self=obj1, body_other=obj2)
+            def map_hook(collision):
+                def apply_hook(h):
+                    def run():
+                        h(collision=collision)
 
-            # TODO: This captures loop variable not its value
-            for hook1 in obj1._collision_hooks:
-                hooks.add(lambda: hook1(collision=collision1))
+                    return run
+
+                return apply_hook
+
+            collision1 = Collision(body_self=obj1, body_other=obj2)
+            hooks |= set(map(map_hook(collision1), obj1._collision_hooks))
 
             collision2 = Collision(body_self=obj2, body_other=obj1)
-            for hook2 in obj2._collision_hooks:
-                hooks.add(lambda: hook2(collision=collision2))
+            hooks |= set(map(map_hook(collision2), obj2._collision_hooks))
 
         # Apply velocities
         for obj in self._objects:
