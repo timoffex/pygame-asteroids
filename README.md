@@ -86,3 +86,51 @@ using the `PhysicsSystem.new_object` method.
 In Unity, there are separate "Collider" and "RigidBody" components
 which interact with each other, but in my code a `PhysicsBody`
 represents both simulatenously.
+
+## Pinject dependency injection
+
+I use [Pinject](https://github.com/google/pinject) for dependency
+injection.
+
+The purpose of dependency injection (passing stuff through function
+arguments) is to separate concerns. For example, the
+`AsteroidGeneratorFactory` injects an `AsteroidFactory` and so doesn't
+need to know the details of how to make an asteroid. I can redefine
+how asteroids work without changing the asteroid spawner code, and I
+can modify the spawner code without changing how asteroids work.
+
+If you do dependency injection by manually passing function arguments,
+you still have to construct all of the dependencies in the correct
+order at the top level of your program. So while
+`AsteroidGeneratorFactory` doesn't need to know how to make an
+`AsteroidFactory`, `main.py` has to know how to make both:
+
+```
+game_object_system = GameObjectSystem()
+physics_system = PhysicsSystem()
+rendering_system = RenderingSystem()
+game_time = GameTime()
+explosion_factory = ExplosionFactory(...)
+
+asteroid_factory = AsteroidFactory(
+    game_object_system=game_object_system,
+    physics_system=physics_system,
+    rendering_system=rendering_system,
+    explosion_factory=explosion_factory,
+)
+asteroid_generator_factory = AsteroidGeneratorFactory(
+    game_object_system=game_object_system,
+    game_time=game_time,
+    asteroid_factory=asteroid_factory
+)
+```
+
+Clearly this is all boilerplate. All constructor arguments are in the
+form `name=name` because all dependencies are named after their class
+by convention. Worse: whenever any class gains a new dependency, I
+have to touch `main.py` and might even have to rearrange the order in
+which I make the objects! For example, if `game_object_system` started
+to rely on `GameTime`, I would have to shuffle around those two lines
+of code.
+
+Pinject automates away this boilerplate.
