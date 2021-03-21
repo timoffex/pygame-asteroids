@@ -105,7 +105,7 @@ order at the top level of your program. So while
 `AsteroidGeneratorFactory` doesn't need to know how to make an
 `AsteroidFactory`, `main.py` has to know how to make both:
 
-```
+```py
 game_object_system = GameObjectSystem()
 physics_system = PhysicsSystem()
 rendering_system = RenderingSystem()
