@@ -1,3 +1,4 @@
+import math
 import pinject
 import pygame
 
@@ -8,6 +9,7 @@ from inputs import Inputs
 from physics import PhysicsSystem
 from rendering import RenderingSystem, Text
 from spaceship import SpaceshipFactory
+from transform import Transform
 
 
 class AsteroidCounter:
@@ -60,6 +62,40 @@ class Application:
         self._spaceship_factory = spaceship_factory
         pass
 
+    def add_border(
+        self,
+        border_x: float,
+        border_y: float,
+        outward_x: float,
+        outward_y: float,
+        radius: float,
+    ):
+        t = Transform()
+        t.set_local_x(border_x + outward_x * radius)
+        t.set_local_y(border_y + outward_y * radius)
+
+        self._physics_system.new_circle_body(
+            mass=math.inf, transform=t, radius=radius
+        )
+
+    def make_borders(self):
+        """Creates the boundaries of the map by using very large invisible
+        circles.
+
+        """
+        self.add_border(
+            border_x=790, border_y=300, outward_x=1, outward_y=0, radius=5000
+        )
+        self.add_border(
+            border_x=10, border_y=300, outward_x=-1, outward_y=0, radius=5000
+        )
+        self.add_border(
+            border_x=400, border_y=10, outward_x=0, outward_y=-1, radius=5000
+        )
+        self.add_border(
+            border_x=400, border_y=590, outward_x=0, outward_y=1, radius=5000
+        )
+
     def start(self):
         pygame.init()
 
@@ -81,6 +117,8 @@ class Application:
             height=600,
             interval_ms=3000,
         )
+
+        self.make_borders()
 
         while True:
             delta_time = pygame.time.delay(20)

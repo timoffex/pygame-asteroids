@@ -106,7 +106,7 @@ class _PhysicsCircleBody(PhysicsBody):
         *,
         mass: float,
         transform: Transform,
-        radius: float
+        radius: float,
     ):
         super().__init__(physics_system, mass=mass, transform=transform)
         self._radius = radius
@@ -179,22 +179,21 @@ class PhysicsSystem:
             vx = obj1.velocity_x - obj2.velocity_x
             vy = obj1.velocity_y - obj2.velocity_y
 
-            # The multiplier that ensures the bounce preserves kinetic
-            # energy
-            t = -(
-                2
-                * (vx * dx + vy * dy)
-                / (1 / obj1.mass + 1 / obj2.mass)
-                / dist_squared
-            )
-
-            if t < 0:
+            v_dot_d = vx * dx + vy * dy
+            if v_dot_d > 0:
                 # The objects were overlapping but moving away from
                 # each other, so don't bounce them
                 continue
 
-            obj1.add_impulse((dx * t, dy * t))
-            obj2.add_impulse((-dx * t, -dy * t))
+            mass_divisor = 1 / obj1.mass + 1 / obj2.mass
+
+            if mass_divisor > 0:
+                # The multiplier that ensures the bounce preserves kinetic
+                # energy
+                t = -(2 * v_dot_d / mass_divisor / dist_squared)
+
+                obj1.add_impulse((dx * t, dy * t))
+                obj2.add_impulse((-dx * t, -dy * t))
 
             def map_hook(collision):
                 def apply_hook(h):
