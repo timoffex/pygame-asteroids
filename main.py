@@ -10,8 +10,13 @@ from rendering import RenderingSystem, Text
 from spaceship import SpaceshipFactory
 
 
-class Counter:
-    def __init__(self, text: Text, count: int):
+class AsteroidCounter:
+    """A graphical counter that keeps track of the number of asteroids
+    that got destroyed.
+
+    """
+
+    def __init__(self, text: Text):
         self._count = 0
         self._text = text
         self._text.text = str(self._count)
@@ -65,7 +70,7 @@ class Application:
         )
         counter_text.x = 30
         counter_text.y = 30
-        counter = Counter(counter_text, count=30)
+        counter = AsteroidCounter(counter_text)
 
         self._spaceship_factory(x=400, y=200)
         self._asteroid_generator_factory(
