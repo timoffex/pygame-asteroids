@@ -19,11 +19,13 @@ class BulletFactory:
         physics_system: PhysicsSystem,
         rendering_system: RenderingSystem,
         game_object_system: GameObjectSystem,
+        provide_asteroid_images,
     ):
         self._game_time = game_time
         self._physics_system = physics_system
         self._rendering_system = rendering_system
         self._game_object_system = game_object_system
+        self._provide_asteroid_images = provide_asteroid_images
         pass
 
     def __call__(
@@ -38,9 +40,7 @@ class BulletFactory:
     ) -> GameObject:
         go = self._game_object_system.new_object()
 
-        img = pygame.transform.scale(
-            pygame.image.load("images/asteroid.png").convert_alpha(), (5, 5)
-        )
+        img = pygame.transform.scale(self._provide_asteroid_images()[0], (5, 5))
 
         transform = Transform()
         transform.set_local_x(x)

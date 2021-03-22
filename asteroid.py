@@ -54,11 +54,13 @@ class AsteroidFactory:
         physics_system: PhysicsSystem,
         rendering_system: RenderingSystem,
         explosion_factory: ExplosionFactory,
+        provide_asteroid_images,
     ):
         self._game_object_system = game_object_system
         self._physics_system = physics_system
         self._rendering_system = rendering_system
         self._explosion_factory = explosion_factory
+        self._provide_asteroid_images = provide_asteroid_images
         pass
 
     def __call__(
@@ -73,7 +75,7 @@ class AsteroidFactory:
         go = self._game_object_system.new_object()
 
         img = pygame.transform.scale(
-            pygame.image.load("images/asteroid.png").convert_alpha(), (50, 50)
+            random.choice(self._provide_asteroid_images()), (50, 50)
         )
 
         transform = Transform()

@@ -41,6 +41,10 @@ class ApplicationBindingSpec(pinject.BindingSpec):
             for n in range(25)
         ]
 
+    def provide_asteroid_images(self):
+        print("Loading asteroid images")
+        return [pygame.image.load("images/asteroid.png").convert_alpha()]
+
 
 class Application:
     def __init__(
