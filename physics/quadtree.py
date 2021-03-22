@@ -20,7 +20,7 @@ class _QuadtreeNode:
     def __init__(self, aabb: AABB, depth: int = 0, max_depth: int = 10):
         self._children = None
         self._colliders = []
-        self._max_load = 5
+        self._max_load = 3
         self._aabb = aabb
         self._depth = depth
         self._max_depth = max_depth
