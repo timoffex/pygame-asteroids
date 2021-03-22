@@ -4,6 +4,9 @@ from game_object import GameObject
 from transform import Transform
 from typing import Any, Protocol
 
+from .aabb import AABB
+from .quadtree import Quadtree, QuadtreeCollider
+
 
 class Collision:
     """An immutable data type containing information about a collision
@@ -88,6 +91,9 @@ class PhysicsBody:
         """Returns a copy of the data associated to this physics object."""
         return list(self._data)
 
+    def _make_aabb(self) -> AABB:
+        raise NotImplementedError()
+
 
 def add_physics_component(go: GameObject, body: PhysicsBody):
     go.add_destroy_hook(lambda: body.disable())
@@ -125,6 +131,14 @@ class _PhysicsCircleBody(PhysicsBody):
 
         return dist_squared < radii_sum_squared
 
+    def _make_aabb(self) -> AABB:
+        return AABB(
+            x_min=self.transform.x() - self.radius(),
+            x_max=self.transform.x() + self.radius(),
+            y_min=self.transform.y() - self.radius(),
+            y_max=self.transform.y() + self.radius(),
+        )
+
 
 class PhysicsSystem:
     """A system that implements velocities and collisions in a
@@ -150,15 +164,10 @@ class PhysicsSystem:
 
     def update(self, delta_time: float):
         # Detect collisions
-        # TODO: Construct a quadtree
 
         hooks = set()
 
-        overlapping_pairs = filter(
-            lambda pair: pair[0].overlaps(pair[1]),
-            itertools.combinations(self._objects, 2),
-        )
-        for (obj1, obj2) in overlapping_pairs:
+        for (obj1, obj2) in self.get_overlapping_pairs():
             # Compute collision impulse that is orthogonal to the
             # collision plane and conserves momentum and kinetic
             # energy
@@ -231,3 +240,17 @@ class PhysicsSystem:
             mx += obj.mass * obj.velocity_x
             my += obj.mass * obj.velocity_y
         return (mx, my)
+
+    def get_overlapping_pairs(self) -> list[(PhysicsBody, PhysicsBody)]:
+        quadtree = Quadtree()
+
+        for obj in self._objects:
+            quadtree.add(QuadtreeCollider(aabb=obj._make_aabb(), data=obj))
+
+        return map(
+            lambda pair: (pair[0].data, pair[1].data),
+            filter(
+                lambda pair: pair[0].data.overlaps(pair[1].data),
+                quadtree.get_nearby_pairs(),
+            ),
+        )
