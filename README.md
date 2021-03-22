@@ -1,6 +1,7 @@
 A small game written in pygame 2. I use Python 3.9 as the interpreter.
 
-The entry point is `main.py`.
+The entry point is `main.py`. Controls are: W to accelerate, A and D
+to turn, S to slow down, Space to shoot.
 
 # Concepts
 
