@@ -72,7 +72,6 @@ class BulletFactory:
             )
 
             if hittable:
-                print("Bullet hit something hittable!", go)
                 hittable.hit()
                 go.destroy()
 
@@ -180,7 +179,7 @@ class SpaceshipFactory:
         guns = self._guns_factory(
             shooting_transform=transform,
             shooting_body=body,
-            firing_delay_ms=50,
+            firing_delay_ms=20,
         )
 
         def update(delta_time: float) -> None:

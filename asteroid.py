@@ -98,7 +98,6 @@ class AsteroidFactory:
                 self._explosion_factory = explosion_factory
 
             def hit(self):
-                print("Asteroid got hit!")
                 self._num_hits += 1
 
                 if self._num_hits >= 10:

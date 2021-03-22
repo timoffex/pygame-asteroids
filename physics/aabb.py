@@ -9,16 +9,24 @@ class AABB:
 
     @property
     def x_min(self):
-        self._x_min
+        return self._x_min
 
     @property
     def x_max(self):
-        self._x_max
+        return self._x_max
 
     @property
     def y_min(self):
-        self._y_min
+        return self._y_min
 
     @property
     def y_max(self):
-        self._y_max
+        return self._y_max
+
+    def intersects(self, other: "AABB") -> bool:
+        return (
+            self.x_max >= other.x_min
+            and self.x_min <= other.x_max
+            and self.y_max >= other.y_min
+            and self.y_min <= other.y_max
+        )

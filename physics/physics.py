@@ -242,10 +242,16 @@ class PhysicsSystem:
         return (mx, my)
 
     def get_overlapping_pairs(self) -> list[(PhysicsBody, PhysicsBody)]:
-        quadtree = Quadtree()
-
-        for obj in self._objects:
-            quadtree.add(QuadtreeCollider(aabb=obj._make_aabb(), data=obj))
+        quadtree = Quadtree(
+            list(
+                map(
+                    lambda obj: QuadtreeCollider(
+                        aabb=obj._make_aabb(), data=obj
+                    ),
+                    self._objects,
+                )
+            )
+        )
 
         return map(
             lambda pair: (pair[0].data, pair[1].data),
