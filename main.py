@@ -108,6 +108,13 @@ class Application:
         counter_text.y = 30
         counter = AsteroidCounter(counter_text)
 
+        fps_text = self._rendering_system.new_text(
+            pygame.font.Font(None, 36), ""
+        )
+        fps_text.x = 700
+        fps_text.y = 30
+        fps_text.color = pygame.Color(200, 200, 0)
+
         self._spaceship_factory(x=400, y=200)
         self._asteroid_generator_factory(
             counter,
@@ -120,8 +127,15 @@ class Application:
 
         self.make_borders()
 
+        last_ticks = pygame.time.get_ticks()
         while True:
-            delta_time = pygame.time.delay(20)
+            pygame.time.delay(20)
+
+            new_ticks = pygame.time.get_ticks()
+            delta_time = new_ticks - last_ticks
+            fps_text.text = "fps: " + str(round(1000 / delta_time))
+            last_ticks = new_ticks
+
             self._inputs.start_new_frame()
 
             if self._inputs.did_quit():
