@@ -23,10 +23,24 @@ class AABB:
     def y_max(self):
         return self._y_max
 
+    @property
+    def width(self):
+        return self.x_max - self.x_min
+
+    @property
+    def height(self):
+        return self.y_max - self.y_min
+
     def intersects(self, other: "AABB") -> bool:
         return (
             self.x_max >= other.x_min
             and self.x_min <= other.x_max
             and self.y_max >= other.y_min
             and self.y_min <= other.y_max
+        )
+
+    def __str__(self):
+        return (
+            f"AABB(({self.x_min}, {self.y_min})"
+            + f" to ({self.x_max}, {self.y_max}))"
         )

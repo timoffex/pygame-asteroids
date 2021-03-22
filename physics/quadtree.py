@@ -17,7 +17,7 @@ class QuadtreeCollider:
 
 
 class _QuadtreeNode:
-    def __init__(self, aabb: AABB, depth: int = 0, max_depth: int = 5):
+    def __init__(self, aabb: AABB, depth: int = 0, max_depth: int = 10):
         self._children = None
         self._colliders = []
         self._max_load = 5
@@ -111,6 +111,16 @@ class _QuadtreeNode:
                 itertools.combinations(self._colliders, 2),
             )
 
+    def get_debug_bounding_boxes(self) -> list[AABB]:
+        if self._children is None:
+            return [self._aabb]
+        else:
+            return [self._aabb] + [
+                box
+                for child in self._children
+                for box in child.get_debug_bounding_boxes()
+            ]
+
     def _add_to_self(self, collider: QuadtreeCollider):
         if (
             self._depth < self._max_depth
@@ -155,3 +165,6 @@ class Quadtree:
 
     def get_nearby_pairs(self) -> list[(QuadtreeCollider, QuadtreeCollider)]:
         return self._root.get_nearby_pairs()
+
+    def get_debug_bounding_boxes(self) -> list[AABB]:
+        return self._root.get_debug_bounding_boxes()

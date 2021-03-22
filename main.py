@@ -1,6 +1,7 @@
 import math
 import pinject
 import pygame
+import pygame.gfxdraw
 
 from asteroid import AsteroidGeneratorFactory
 from game_object import GameObjectSystem
@@ -131,6 +132,8 @@ class Application:
 
         self.make_borders()
 
+        self._physics_system.debug_save_bounding_boxes = True
+
         last_ticks = pygame.time.get_ticks()
         while True:
             pygame.time.delay(20)
@@ -151,6 +154,19 @@ class Application:
 
             # Clear the screen
             screen.fill(pygame.Color(0, 0, 0))
+
+            # Draw physics bounding boxes
+            for box in self._physics_system.debug_get_bounding_boxes():
+                pygame.gfxdraw.rectangle(
+                    screen,
+                    pygame.Rect(
+                        box.x_min,
+                        box.y_min,
+                        box.width,
+                        box.height,
+                    ),
+                    pygame.Color(255, 0, 255),
+                )
 
             self._rendering_system.render(screen)
             pygame.display.update()

@@ -148,6 +148,8 @@ class PhysicsSystem:
 
     def __init__(self):
         self._objects: set[PhysicsBody] = set()
+        self._debug_bounding_boxes = []
+        self.debug_save_bounding_boxes = False
 
     def new_circle_body(
         self, *, mass: float, transform: Transform, radius: float
@@ -253,6 +255,9 @@ class PhysicsSystem:
             )
         )
 
+        if self.debug_save_bounding_boxes:
+            self._debug_bounding_boxes = quadtree.get_debug_bounding_boxes()
+
         return map(
             lambda pair: (pair[0].data, pair[1].data),
             filter(
@@ -260,3 +265,6 @@ class PhysicsSystem:
                 quadtree.get_nearby_pairs(),
             ),
         )
+
+    def debug_get_bounding_boxes(self) -> list[AABB]:
+        return self._debug_bounding_boxes
