@@ -30,15 +30,17 @@ class AsteroidCounter:
 
 
 class ApplicationBindingSpec(pinject.BindingSpec):
+
+    # The following should always be injected in provider form and
+    # used lazily because the Pinject object graph is (intentionally)
+    # constructed before pygame is initialized. For example, inject
+    # "provide_explosion_images" and call it when you need explosion
+    # images; don't inject "explosion_images" directly.
+
     def provide_explosion_images(self):
-        # This should always be injected as a provider and used
-        # lazily, since the Pinject object graph is constructed before
-        # pygame is initialized! So inject "provide_explosion_images"
-        # and call it when you need explosion images; don't inject
-        # "explosion_images" directly.
         print("Loading explosion images")
         return [
-            pygame.image.load("images/explosion_%d.png" % n).convert_alpha()
+            pygame.image.load(f"images/explosion_{n}.png").convert_alpha()
             for n in range(25)
         ]
 
@@ -155,7 +157,7 @@ class Application:
             # Clear the screen
             screen.fill(pygame.Color(0, 0, 0))
 
-            # Draw physics bounding boxes
+            # Draw quadtree constructed in physics step
             for box in self._physics_system.debug_get_bounding_boxes():
                 pygame.gfxdraw.rectangle(
                     screen,

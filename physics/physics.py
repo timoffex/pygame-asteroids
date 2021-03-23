@@ -1,8 +1,6 @@
-import itertools
-
 from game_object import GameObject
 from transform import Transform
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 from .aabb import AABB
 from .quadtree import Quadtree, QuadtreeCollider
@@ -165,8 +163,58 @@ class PhysicsSystem:
         return body
 
     def update(self, delta_time: float):
-        # Detect collisions
+        # Detect collisions & collect collision hooks
+        hooks = self._process_collisions_and_get_hooks()
 
+        # Apply velocities
+        for obj in self._objects:
+            obj.transform.add_x(obj.velocity_x * delta_time)
+            obj.transform.add_y(obj.velocity_y * delta_time)
+
+        # Run hooks
+        for hook in hooks:
+            hook()
+
+    def kinetic_energy(self) -> float:
+        """Computes the total kinetic energy of all physics objects."""
+        return sum(map(lambda obj: obj.kinetic_energy(), self._objects))
+
+    def total_momentum(self) -> (float, float):
+        """Computes the total momentum of all physics objects."""
+        mx = 0
+        my = 0
+        for obj in self._objects:
+            mx += obj.mass * obj.velocity_x
+            my += obj.mass * obj.velocity_y
+        return (mx, my)
+
+    def get_overlapping_pairs(self) -> list[(PhysicsBody, PhysicsBody)]:
+        quadtree = Quadtree(
+            list(
+                map(
+                    lambda obj: QuadtreeCollider(
+                        aabb=obj._make_aabb(), data=obj
+                    ),
+                    self._objects,
+                )
+            )
+        )
+
+        if self.debug_save_bounding_boxes:
+            self._debug_bounding_boxes = quadtree.get_debug_bounding_boxes()
+
+        return map(
+            lambda pair: (pair[0].data, pair[1].data),
+            filter(
+                lambda pair: pair[0].data.overlaps(pair[1].data),
+                quadtree.get_nearby_pairs(),
+            ),
+        )
+
+    def debug_get_bounding_boxes(self) -> list[AABB]:
+        return self._debug_bounding_boxes
+
+    def _process_collisions_and_get_hooks(self) -> set[Callable[[], None]]:
         hooks = set()
 
         for (obj1, obj2) in self.get_overlapping_pairs():
@@ -221,50 +269,4 @@ class PhysicsSystem:
             collision2 = Collision(body_self=obj2, body_other=obj1)
             hooks |= set(map(map_hook(collision2), obj2._collision_hooks))
 
-        # Apply velocities
-        for obj in self._objects:
-            obj.transform.add_x(obj.velocity_x * delta_time)
-            obj.transform.add_y(obj.velocity_y * delta_time)
-
-        # Run hooks
-        for hook in hooks:
-            hook()
-
-    def kinetic_energy(self) -> float:
-        """Computes the total kinetic energy of all physics objects."""
-        return sum(map(lambda obj: obj.kinetic_energy(), self._objects))
-
-    def total_momentum(self) -> (float, float):
-        """Computes the total momentum of all physics objects."""
-        mx = 0
-        my = 0
-        for obj in self._objects:
-            mx += obj.mass * obj.velocity_x
-            my += obj.mass * obj.velocity_y
-        return (mx, my)
-
-    def get_overlapping_pairs(self) -> list[(PhysicsBody, PhysicsBody)]:
-        quadtree = Quadtree(
-            list(
-                map(
-                    lambda obj: QuadtreeCollider(
-                        aabb=obj._make_aabb(), data=obj
-                    ),
-                    self._objects,
-                )
-            )
-        )
-
-        if self.debug_save_bounding_boxes:
-            self._debug_bounding_boxes = quadtree.get_debug_bounding_boxes()
-
-        return map(
-            lambda pair: (pair[0].data, pair[1].data),
-            filter(
-                lambda pair: pair[0].data.overlaps(pair[1].data),
-                quadtree.get_nearby_pairs(),
-            ),
-        )
-
-    def debug_get_bounding_boxes(self) -> list[AABB]:
-        return self._debug_bounding_boxes
+        return hooks
