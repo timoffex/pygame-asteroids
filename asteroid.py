@@ -98,11 +98,16 @@ class AsteroidFactory:
             def __init__(self, explosion_factory):
                 self._num_hits = 0
                 self._explosion_factory = explosion_factory
+                self._is_destroyed = False
 
             def hit(self):
+                if self._is_destroyed:
+                    return
+
                 self._num_hits += 1
 
                 if self._num_hits >= 10:
+                    self._is_destroyed = True
                     go.destroy()
                     self._explosion_factory(x=transform.x(), y=transform.y())
                     counter.increment()
