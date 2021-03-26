@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from game_object import GameObject
 from transform import Transform
 from typing import Any, Callable, Protocol
@@ -6,15 +7,15 @@ from .aabb import AABB
 from .quadtree import Quadtree, QuadtreeCollider
 
 
+@dataclass(frozen=True)
 class Collision:
     """An immutable data type containing information about a collision
     between one physics body and another.
 
     """
 
-    def __init__(self, *, body_self: "PhysicsBody", body_other: "PhysicsBody"):
-        self.body_self = body_self
-        self.body_other = body_other
+    body_self: "PhysicsBody"
+    body_other: "PhysicsBody"
 
 
 class CollisionHook(Protocol):
