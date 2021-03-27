@@ -6,8 +6,10 @@ import pygame.gfxdraw
 from asteroid import AsteroidGeneratorFactory
 from game_object import GameObjectSystem
 from game_time import GameTime
+from heart_display import HeartDisplayFactory
 from inputs import Inputs
 from physics import PhysicsSystem
+from player import Player
 from rendering import RenderingSystem, Text
 from spaceship import SpaceshipFactory
 from transform import Transform
@@ -48,6 +50,10 @@ class ApplicationBindingSpec(pinject.BindingSpec):
         print("Loading asteroid images")
         return [pygame.image.load("images/asteroid.png").convert_alpha()]
 
+    def provide_heart_image(self):
+        print("Loading heart image")
+        return pygame.image.load("images/heart.png").convert_alpha()
+
 
 class Application:
     def __init__(
@@ -59,6 +65,7 @@ class Application:
         physics_system: PhysicsSystem,
         asteroid_generator_factory: AsteroidGeneratorFactory,
         spaceship_factory: SpaceshipFactory,
+        heart_display_factory: HeartDisplayFactory,
     ):
         self._inputs = inputs
         self._game_time = game_time
@@ -67,6 +74,7 @@ class Application:
         self._rendering_system = rendering_system
         self._asteroid_generator_factory = asteroid_generator_factory
         self._spaceship_factory = spaceship_factory
+        self._heart_display_factory = heart_display_factory
         pass
 
     def add_border(
@@ -114,8 +122,8 @@ class Application:
         counter_text = self._rendering_system.new_text(
             pygame.font.Font(None, 36), ""
         )
-        counter_text.x = 30
-        counter_text.y = 30
+        counter_text.x = 400
+        counter_text.y = 20
         counter = AsteroidCounter(counter_text)
 
         fps_text = self._rendering_system.new_text(
@@ -125,7 +133,24 @@ class Application:
         fps_text.y = 30
         fps_text.color = pygame.Color(200, 200, 0)
 
-        self._spaceship_factory(x=400, y=200)
+        player = Player()
+        spaceship = self._spaceship_factory(x=400, y=200, player=player)
+
+        def on_player_hearts_changed(new_value: int):
+            if new_value <= 0:
+                print("Player's hearts are <= 0")
+                spaceship.destroy()
+
+        player.on_hearts_changed(on_player_hearts_changed)
+
+        heart_display_transform = Transform()
+        heart_display_transform.set_local_x(20)
+        heart_display_transform.set_local_y(20)
+        heart_display_go = self._game_object_system.new_object()
+        self._heart_display_factory(
+            heart_display_go, heart_display_transform, player
+        )
+
         self._asteroid_generator_factory(
             counter,
             x=0,

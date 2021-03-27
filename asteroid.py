@@ -6,9 +6,11 @@ from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
 from hittable import Hittable
-from physics import PhysicsSystem
+from physics import PhysicsSystem, Collision
+from player import Player
 from rendering import RenderingSystem
 from transform import Transform
+from utils import first_where
 
 
 class ExplosionFactory:
@@ -81,6 +83,17 @@ class AsteroidFactory:
         body = self._physics_system.new_circle_body(
             game_object=go, transform=transform, radius=25, mass=5
         )
+
+        def on_collision(collision: Collision):
+            player = first_where(
+                lambda x: isinstance(x, Player),
+                collision.body_other.get_data(),
+            )
+
+            if player:
+                player.decrement_hearts()
+
+        body.add_collision_hook(on_collision)
 
         transform.set_local_x(x)
         transform.set_local_y(y)

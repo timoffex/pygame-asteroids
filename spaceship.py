@@ -9,7 +9,10 @@ from hittable import Hittable
 from inputs import Inputs
 from transform import Transform
 from physics import PhysicsSystem, PhysicsBody, Collision
+from player import Player
 from rendering import RenderingSystem
+from utils import first_where
+from typing import Optional
 
 
 class BulletFactory:
@@ -40,7 +43,9 @@ class BulletFactory:
     ) -> GameObject:
         go = self._game_object_system.new_object()
 
-        img = pygame.transform.scale(self._provide_asteroid_images()[0], (5, 5))
+        img = pygame.transform.scale(
+            self._provide_asteroid_images()[0], (5, 5)
+        )
 
         transform = Transform()
         transform.set_local_x(x)
@@ -59,13 +64,9 @@ class BulletFactory:
 
         def on_collision(collision: Collision):
             hittable: Hittable
-            hittable = next(
-                (
-                    x
-                    for x in collision.body_other.get_data()
-                    if isinstance(x, Hittable)
-                ),
-                None,
+            hittable = first_where(
+                lambda x: isinstance(x, Hittable),
+                collision.body_other.get_data(),
             )
 
             if hittable:
@@ -149,7 +150,9 @@ class SpaceshipFactory:
         self._guns_factory = guns_factory
         pass
 
-    def __call__(self, x: float = 0, y: float = 0) -> GameObject:
+    def __call__(
+        self, x: float = 0, y: float = 0, player: Optional[Player] = None
+    ) -> GameObject:
         go = self._game_object_system.new_object()
 
         img = pygame.transform.rotate(
@@ -168,10 +171,13 @@ class SpaceshipFactory:
             game_object=go, transform=transform, radius=25, mass=1
         )
 
+        if player:
+            body.add_data(player)
+
         guns = self._guns_factory(
             shooting_transform=transform,
             shooting_body=body,
-            firing_delay_ms=20,
+            firing_delay_ms=100,
         )
 
         def update(delta_time: float) -> None:
