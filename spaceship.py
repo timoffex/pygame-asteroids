@@ -8,7 +8,7 @@ from game_time import GameTime
 from hittable import Hittable
 from inputs import Inputs
 from transform import Transform
-from physics import PhysicsSystem, PhysicsBody, Collision
+from physics import PhysicsSystem, PhysicsBody, Collision, TriggerEvent
 from player import Player
 from rendering import RenderingSystem
 from utils import first_where
@@ -173,6 +173,17 @@ class SpaceshipFactory:
 
         if player:
             body.add_data(player)
+
+        trigger_zone_transform = Transform(parent=transform)
+        trigger_zone_transform.set_local_x(40)
+        trigger_zone = self._physics_system.new_circle_trigger(
+            radius=5, game_object=go, transform=trigger_zone_transform
+        )
+
+        def on_trigger(trigger_event: TriggerEvent):
+            print("Trigger in front of spaceship!")
+
+        trigger_zone.add_trigger_hook(on_trigger)
 
         guns = self._guns_factory(
             shooting_transform=transform,
