@@ -1,5 +1,7 @@
 A small game written in pygame 2. I use Python 3.9 as the interpreter.
 
+This depends on the `pinject` and `pygame` packages.
+
 The entry point is `main.py`. Controls are: W to accelerate, A and D
 to turn, S to slow down, Space to shoot.
 
@@ -61,9 +63,8 @@ move a `Sprite` to another `RenderingSystem` afterward. You can
 temporarily disable a `Sprite` to prevent it from getting rendered.
 
 `Sprite`s keep a reference to a `Transform` which determines where the
-`Sprite` is drawn on the screen. The graphics system is also aware of
-`GameObject` and provides an `add_sprite_component` method to
-automatically disable a sprite when a `GameObject` is destroyed.
+`Sprite` is drawn on the screen. Every `Sprite` is attached to a
+`GameObject` so that it is destroyed when that object is destroyed.
 
 ## Physics
 

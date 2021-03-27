@@ -6,26 +6,39 @@ from transform import Transform
 
 
 class Sprite:
-    """A 2D image that moves and rotates according to a transform.
+    """A 2D image attached to a GameObject that moves and rotates
+    according to a Transform.
 
-    Create Sprites using RenderingSystem.new_sprite."""
+    Create Sprites using RenderingSystem.new_sprite.
+    """
 
     def __init__(
-        self, rendering_system, surface: pygame.Surface, transform: Transform
+        self,
+        rendering_system: "RenderingSystem",
+        game_object: GameObject,
+        surface: pygame.Surface,
+        transform: Transform,
     ):
         self._surface = surface
+        self._game_object = game_object
         self._transform = transform
         self._system = rendering_system
 
-    def disable(self):
-        """Temporarily removes this sprite from the rendering system.
+        self._game_object.add_destroy_hook(self.destroy)
+        self._is_destroyed = False
 
-        Use this to stop the sprite from getting drawn."""
+    def destroy(self):
+        """Removes this sprite from the rendering system.
+
+        Use this to stop the sprite from getting drawn.
+
+        """
+        if self._is_destroyed:
+            return
+
+        self._is_destroyed = True
         self._system._sprites.discard(self)
-
-    def enable(self):
-        """Adds the sprite back to the rendering system."""
-        self._system._sprites.add(self)
+        self._game_object.remove_destroy_hook(self.destroy)
 
     def render(self, screen: pygame.Surface):
         x = self._transform.x()
@@ -46,16 +59,6 @@ class Sprite:
         )
 
         screen.blit(img_rotated, (x + off_x, y + off_y))
-
-
-def add_sprite_component(go: GameObject, sprite: Sprite):
-    def hook():
-        sprite.disable()
-
-    go.add_destroy_hook(hook)
-
-    # TODO: Sprite component super jank, fix
-    return lambda: go.remove_destroy_hook(hook)
 
 
 class Text:
@@ -106,10 +109,8 @@ class RenderingSystem:
     def __init__(self):
         self._sprites = set()
 
-    def new_sprite(
-        self, surface: pygame.Surface, transform: Transform
-    ) -> Sprite:
-        sprite = Sprite(self, surface, transform)
+    def new_sprite(self, *args, **kwargs) -> Sprite:
+        sprite = Sprite(self, *args, **kwargs)
         self._sprites.add(sprite)
         return sprite
 

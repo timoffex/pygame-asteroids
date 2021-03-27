@@ -8,8 +8,8 @@ from game_time import GameTime
 from hittable import Hittable
 from inputs import Inputs
 from transform import Transform
-from physics import PhysicsSystem, PhysicsBody, Collision, add_physics_component
-from rendering import RenderingSystem, add_sprite_component
+from physics import PhysicsSystem, PhysicsBody, Collision
+from rendering import RenderingSystem
 
 
 class BulletFactory:
@@ -47,14 +47,11 @@ class BulletFactory:
         transform.set_local_y(y)
         transform.set_local_angle(angle)
 
-        add_sprite_component(
-            go, self._rendering_system.new_sprite(img, transform)
-        )
+        self._rendering_system.new_sprite(go, img, transform)
 
         body = self._physics_system.new_circle_body(
-            transform=transform, radius=2.5, mass=0.1
+            game_object=go, transform=transform, radius=2.5, mass=0.1
         )
-        add_physics_component(go, body)
 
         speed = 0.1
         body.velocity_x = vx + speed * math.cos(angle)
@@ -166,15 +163,10 @@ class SpaceshipFactory:
         transform = Transform()
         transform.set_local_x(x)
         transform.set_local_y(y)
-        sprite = self._rendering_system.new_sprite(img, transform)
+        self._rendering_system.new_sprite(go, img, transform)
         body = self._physics_system.new_circle_body(
-            transform=transform, radius=25, mass=1
+            game_object=go, transform=transform, radius=25, mass=1
         )
-
-        # Register the sprite and physics body as components so that they
-        # get disabled when the object is destroyed
-        add_physics_component(go, body)
-        add_sprite_component(go, sprite)
 
         guns = self._guns_factory(
             shooting_transform=transform,

@@ -6,8 +6,8 @@ from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
 from hittable import Hittable
-from physics import PhysicsSystem, add_physics_component
-from rendering import RenderingSystem, add_sprite_component
+from physics import PhysicsSystem
+from rendering import RenderingSystem
 from transform import Transform
 
 
@@ -36,12 +36,10 @@ class ExplosionFactory:
         def animation():
             for n in range(25):
                 sprite = self._rendering_system.new_sprite(
-                    explosion_images[n], transform
+                    go, explosion_images[n], transform
                 )
-                remove_component = add_sprite_component(go, sprite)
                 yield resume_after(self._game_time, delay_ms=20)
-                remove_component()
-                sprite.disable()
+                sprite.destroy()
             go.destroy()
 
         GameObjectCoroutine(go, animation()).start()
@@ -79,15 +77,10 @@ class AsteroidFactory:
         )
 
         transform = Transform()
-        sprite = self._rendering_system.new_sprite(img, transform)
+        self._rendering_system.new_sprite(go, img, transform)
         body = self._physics_system.new_circle_body(
-            transform=transform, radius=25, mass=5
+            game_object=go, transform=transform, radius=25, mass=5
         )
-
-        # Register the sprite and physics body as components so that they
-        # get disabled when the object is destroyed
-        add_physics_component(go, body)
-        add_sprite_component(go, sprite)
 
         transform.set_local_x(x)
         transform.set_local_y(y)

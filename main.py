@@ -82,7 +82,10 @@ class Application:
         t.set_local_y(border_y + outward_y * radius)
 
         self._physics_system.new_circle_body(
-            mass=math.inf, transform=t, radius=radius
+            game_object=self._game_object_system.new_object(),
+            mass=math.inf,
+            transform=t,
+            radius=radius,
         )
 
     def make_borders(self):

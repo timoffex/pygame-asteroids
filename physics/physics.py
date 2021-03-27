@@ -37,8 +37,16 @@ class PhysicsBody:
 
     """
 
-    def __init__(self, physics_system, *, mass: float, transform: Transform):
+    def __init__(
+        self,
+        physics_system,
+        *,
+        game_object: GameObject,
+        mass: float,
+        transform: Transform,
+    ):
         self._system = physics_system
+        self._game_object = game_object
         self._collision_hooks: set[CollisionHook] = set()
         self._data = list()
         self.transform = transform
@@ -46,13 +54,17 @@ class PhysicsBody:
         self.velocity_y = 0
         self.mass = mass
 
-    def disable(self):
-        """Removes this physics body from the simulation."""
-        self._system._objects.discard(self)
+        self._game_object.add_destroy_hook(self.destroy)
+        self._is_destroyed = False
 
-    def enable(self):
-        """Adds this physics body to the simulation."""
-        self._system._objects.add(self)
+    def destroy(self):
+        """Removes this physics body from the simulation."""
+        if self._is_destroyed:
+            return
+
+        self._is_destroyed = True
+        self._system._objects.discard(self)
+        self._game_object.remove_destroy_hook(self.destroy)
 
     def add_impulse(self, impulse: (float, float)):
         """Applies an impulse to the physics body.
@@ -94,10 +106,6 @@ class PhysicsBody:
         raise NotImplementedError()
 
 
-def add_physics_component(go: GameObject, body: PhysicsBody):
-    go.add_destroy_hook(lambda: body.disable())
-
-
 class _PhysicsCircleBody(PhysicsBody):
     """A physics body with a circle collider.
 
@@ -108,12 +116,11 @@ class _PhysicsCircleBody(PhysicsBody):
     def __init__(
         self,
         physics_system,
-        *,
-        mass: float,
-        transform: Transform,
         radius: float,
+        *args,
+        **kwargs,
     ):
-        super().__init__(physics_system, mass=mass, transform=transform)
+        super().__init__(physics_system, *args, **kwargs)
         self._radius = radius
 
     def radius(self):
@@ -150,16 +157,12 @@ class PhysicsSystem:
         self._debug_bounding_boxes = []
         self.debug_save_bounding_boxes = False
 
-    def new_circle_body(
-        self, *, mass: float, transform: Transform, radius: float
-    ) -> PhysicsBody:
+    def new_circle_body(self, *args, **kwargs) -> PhysicsBody:
         """Creates a new PhysicsBody with a circular collider centered at the
         transform.
 
         """
-        body = _PhysicsCircleBody(
-            self, transform=transform, radius=radius, mass=mass
-        )
+        body = _PhysicsCircleBody(self, *args, **kwargs)
         self._objects.add(body)
         return body
 
