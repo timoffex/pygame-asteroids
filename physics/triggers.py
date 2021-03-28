@@ -2,7 +2,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from game_object import GameObject
 from transform import Transform
-from typing import Callable, Protocol
+from typing import Any, Callable, Protocol
 
 from .collider import Collider
 
@@ -41,6 +41,8 @@ class TriggerCollider(Collider):
         self._enter_hooks: list[TriggerHook] = []
         self._exit_hooks: list[TriggerHook] = []
 
+        self._data = list()
+
         self._transform = transform
         self._is_destroyed = False
         self._game_object = game_object
@@ -55,6 +57,18 @@ class TriggerCollider(Collider):
             self._game_object.remove_destroy_hook(self.destroy)
             self._is_destroyed = True
         super().destroy()
+
+    def add_data(self, data: Any):
+        """Adds data to this trigger zone.
+
+        Data can be any object and order is preserved.
+
+        """
+        self._data.append(data)
+
+    def get_data(self) -> list[Any]:
+        """Returns a copy of the data associated to this trigger zone."""
+        return list(self._data)
 
     def on_trigger_stay(self, hook: TriggerHook) -> Callable[[], None]:
         """Adds a hook that runs on every frame that something is inside

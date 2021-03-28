@@ -109,8 +109,18 @@ class RenderingSystem:
     def __init__(self):
         self._sprites = set()
 
-    def new_sprite(self, *args, **kwargs) -> Sprite:
-        sprite = Sprite(self, *args, **kwargs)
+    def new_sprite(
+        self,
+        game_object: GameObject,
+        surface: pygame.Surface,
+        transform: Transform,
+    ) -> Sprite:
+        sprite = Sprite(
+            self,
+            game_object=game_object,
+            surface=surface,
+            transform=transform,
+        )
         self._sprites.add(sprite)
         return sprite
 

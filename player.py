@@ -16,8 +16,13 @@ class Player:
         return self._hearts
 
     def decrement_hearts(self):
-        self._hearts -= 1
-        print(f"Player got hit! Hearts remaining: {self._hearts}")
+        self._change_hearts(self.hearts - 1)
+
+    def increment_hearts(self):
+        self._change_hearts(self.hearts + 1)
+
+    def _change_hearts(self, new_value):
+        self._hearts = new_value
         listeners = list(self._hearts_listeners)
         for listener in listeners:
             listener(self._hearts)

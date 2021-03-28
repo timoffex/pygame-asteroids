@@ -149,10 +149,13 @@ class RegularCollider(Collider):
         self._body._colliders.discard(self)
         super().destroy()
 
+    def get_data(self) -> list[Any]:
+        return self.body.get_data()
+
     @property
-    def body(self):
+    def body(self) -> PhysicsBody:
         return self._body
 
     @property
-    def transform(self):
+    def transform(self) -> Transform:
         return self.body.transform

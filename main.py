@@ -54,6 +54,10 @@ class ApplicationBindingSpec(pinject.BindingSpec):
         print("Loading heart image")
         return pygame.image.load("images/heart.png").convert_alpha()
 
+    def provide_extra_heart_image(self):
+        print("Loading extra-heart image")
+        return pygame.image.load("images/extra_heart.png").convert_alpha()
+
 
 class Application:
     def __init__(

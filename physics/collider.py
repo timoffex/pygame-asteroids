@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class Collider(ABC):
@@ -25,4 +26,9 @@ class Collider(ABC):
         pass
 
     def destroy(self):
+        pass
+
+    @abstractmethod
+    def get_data(self) -> list[Any]:
+        """Returns a copy of the data associated to this collider."""
         pass

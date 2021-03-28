@@ -51,7 +51,6 @@ class HeartDisplay:
                 self._heart_objects.append(self._new_heart(new_heart_idx))
 
     def _new_heart(self, heart_idx: int) -> GameObject:
-        print(f"Making new heart at index {heart_idx}")
         heart_object = self._game_object_system.new_object()
 
         heart_transform = Transform(parent=self._transform)

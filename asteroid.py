@@ -2,6 +2,7 @@ import pinject
 import pygame
 import random
 
+from extra_heart import ExtraHeartFactory
 from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
@@ -55,12 +56,14 @@ class AsteroidFactory:
         rendering_system: RenderingSystem,
         explosion_factory: ExplosionFactory,
         provide_asteroid_images,
+        extra_heart_factory: ExtraHeartFactory,
     ):
         self._game_object_system = game_object_system
         self._physics_system = physics_system
         self._rendering_system = rendering_system
         self._explosion_factory = explosion_factory
         self._provide_asteroid_images = provide_asteroid_images
+        self._extra_heart_factory = extra_heart_factory
         pass
 
     def __call__(
@@ -102,9 +105,10 @@ class AsteroidFactory:
         body.velocity_y = vy
 
         class AsteroidHittable(Hittable):
-            def __init__(self, explosion_factory):
+            def __init__(self, explosion_factory, extra_heart_factory):
                 self._num_hits = 0
                 self._explosion_factory = explosion_factory
+                self._extra_heart_factory = extra_heart_factory
                 self._is_destroyed = False
 
             def hit(self):
@@ -119,7 +123,16 @@ class AsteroidFactory:
                     self._explosion_factory(x=transform.x(), y=transform.y())
                     counter.increment()
 
-        body.add_data(AsteroidHittable(self._explosion_factory))
+                    if random.uniform(0, 1) < 0.2:
+                        self._extra_heart_factory(
+                            x=transform.x(), y=transform.y()
+                        )
+
+        body.add_data(
+            AsteroidHittable(
+                self._explosion_factory, self._extra_heart_factory
+            )
+        )
 
         return go
 

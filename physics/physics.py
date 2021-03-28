@@ -108,7 +108,7 @@ class PhysicsSystem:
         return self._debug_bounding_boxes
 
     def _run_triggers(self):
-        triggers = self._triggers
+        triggers = list(self._triggers)
         for trigger in triggers:
             trigger.run_triggers()
 

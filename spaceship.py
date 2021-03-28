@@ -2,13 +2,14 @@ import math
 import pinject
 import pygame
 
+from extra_heart import ExtraHeartCollector
 from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
 from hittable import Hittable
 from inputs import Inputs
 from transform import Transform
-from physics import PhysicsSystem, PhysicsBody, Collision, TriggerEvent
+from physics import PhysicsSystem, PhysicsBody, Collision
 from player import Player
 from rendering import RenderingSystem
 from utils import first_where
@@ -179,19 +180,7 @@ class SpaceshipFactory:
 
         if player:
             body.add_data(player)
-
-        trigger_zone_transform = Transform(parent=transform)
-        trigger_zone_transform.set_local_x(40)
-        trigger_zone = self._physics_system.new_circle_trigger(
-            radius=5, game_object=go, transform=trigger_zone_transform
-        )
-
-        trigger_zone.on_trigger_enter(
-            lambda _: print("Entered trigger in front of spaceship")
-        )
-        trigger_zone.on_trigger_exit(
-            lambda _: print("Exited trigger in front of spaceship")
-        )
+            body.add_data(PlayerHeartCollector(player))
 
         guns = self._guns_factory(
             shooting_transform=transform,
@@ -242,3 +231,11 @@ class SpaceshipFactory:
 
         go.add_update_hook(update)
         return go
+
+
+class PlayerHeartCollector(ExtraHeartCollector):
+    def __init__(self, player: Player):
+        self._player = player
+
+    def gain_heart(self):
+        self._player.increment_hearts()
