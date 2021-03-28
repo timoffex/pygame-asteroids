@@ -248,7 +248,7 @@ class _CircleColliderMixin(Collider):
         return self._radius
 
     def destroy(self):
-        self._system._circle_colliders.remove(self)
+        self._system._circle_colliders.discard(self)
         super().destroy()
 
     def _overlaps(self, other: "_CircleColliderMixin"):
