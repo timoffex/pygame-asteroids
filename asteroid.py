@@ -80,9 +80,10 @@ class AsteroidFactory:
 
         transform = Transform()
         self._rendering_system.new_sprite(go, img, transform)
-        body = self._physics_system.new_circle_body(
-            game_object=go, transform=transform, radius=25, mass=5
+        body = self._physics_system.new_body(
+            game_object=go, transform=transform, mass=5
         )
+        body.add_circle_collider(radius=25)
 
         def on_collision(collision: Collision):
             player = first_where(

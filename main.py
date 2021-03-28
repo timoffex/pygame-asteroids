@@ -89,12 +89,12 @@ class Application:
         t.set_local_x(border_x + outward_x * radius)
         t.set_local_y(border_y + outward_y * radius)
 
-        self._physics_system.new_circle_body(
+        body = self._physics_system.new_body(
             game_object=self._game_object_system.new_object(),
             mass=math.inf,
             transform=t,
-            radius=radius,
         )
+        body.add_circle_collider(radius=radius)
 
     def make_borders(self):
         """Creates the boundaries of the map by using very large invisible

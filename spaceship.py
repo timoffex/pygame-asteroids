@@ -54,9 +54,10 @@ class BulletFactory:
 
         self._rendering_system.new_sprite(go, img, transform)
 
-        body = self._physics_system.new_circle_body(
-            game_object=go, transform=transform, radius=2.5, mass=0.1
+        body = self._physics_system.new_body(
+            game_object=go, transform=transform, mass=0.1
         )
+        body.add_circle_collider(radius=2.5)
 
         speed = 0.1
         body.velocity_x = vx + speed * math.cos(angle)
@@ -167,9 +168,10 @@ class SpaceshipFactory:
         transform.set_local_x(x)
         transform.set_local_y(y)
         self._rendering_system.new_sprite(go, img, transform)
-        body = self._physics_system.new_circle_body(
-            game_object=go, transform=transform, radius=25, mass=1
+        body = self._physics_system.new_body(
+            game_object=go, transform=transform, mass=1
         )
+        body.add_circle_collider(radius=25)
 
         if player:
             body.add_data(player)
@@ -180,10 +182,12 @@ class SpaceshipFactory:
             radius=5, game_object=go, transform=trigger_zone_transform
         )
 
-        def on_trigger(trigger_event: TriggerEvent):
-            print("Trigger in front of spaceship!")
-
-        trigger_zone.add_trigger_hook(on_trigger)
+        trigger_zone.on_trigger_enter(
+            lambda _: print("Entered trigger in front of spaceship")
+        )
+        trigger_zone.on_trigger_exit(
+            lambda _: print("Exited trigger in front of spaceship")
+        )
 
         guns = self._guns_factory(
             shooting_transform=transform,
