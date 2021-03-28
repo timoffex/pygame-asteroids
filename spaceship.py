@@ -1,6 +1,7 @@
 import math
 import pinject
 import pygame
+import random
 
 from extra_heart import ExtraHeartCollector
 from game_object import GameObject, GameObjectSystem
@@ -23,13 +24,13 @@ class BulletFactory:
         physics_system: PhysicsSystem,
         rendering_system: RenderingSystem,
         game_object_system: GameObjectSystem,
-        provide_asteroid_images,
+        provide_bullet_images,
     ):
         self._game_time = game_time
         self._physics_system = physics_system
         self._rendering_system = rendering_system
         self._game_object_system = game_object_system
-        self._provide_asteroid_images = provide_asteroid_images
+        self._provide_bullet_images = provide_bullet_images
         pass
 
     def __call__(
@@ -44,9 +45,7 @@ class BulletFactory:
     ) -> GameObject:
         go = self._game_object_system.new_object()
 
-        img = pygame.transform.scale(
-            self._provide_asteroid_images()[0], (5, 5)
-        )
+        img = random.choice(self._provide_bullet_images())
 
         transform = Transform()
         transform.set_local_x(x)
@@ -56,9 +55,9 @@ class BulletFactory:
         self._rendering_system.new_sprite(go, img, transform)
 
         body = self._physics_system.new_body(
-            game_object=go, transform=transform, mass=0.1
+            game_object=go, transform=transform, mass=0.8
         )
-        body.add_circle_collider(radius=2.5)
+        body.add_circle_collider(radius=7.5)
 
         speed = 0.1
         body.velocity_x = vx + speed * math.cos(angle)
@@ -182,8 +181,10 @@ class SpaceshipFactory:
             body.add_data(player)
             body.add_data(PlayerHeartCollector(player))
 
+        guns_transform = Transform(parent=transform)
+        guns_transform.set_local_x(40)
         guns = self._guns_factory(
-            shooting_transform=transform,
+            shooting_transform=guns_transform,
             shooting_body=body,
             firing_delay_ms=100,
         )
