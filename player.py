@@ -11,7 +11,32 @@ class Player:
         self._hearts = 3
         self._hearts_listeners: list[Callable[[int], None]] = []
 
-        self.bullets = 100
+        self._bullets = 100
+        self._bullets_listeners: list[Callable[int], None] = []
+
+    @property
+    def bullets(self):
+        return self._bullets
+
+    @bullets.setter
+    def bullets(self, new_value):
+        self._bullets = new_value
+        listeners = self._bullets_listeners
+        for listener in listeners:
+            listener(new_value)
+
+    def on_bullets_changed(
+        self, listener: Callable[[int], None]
+    ) -> Unsubscriber:
+        self._bullets_listeners.append(listener)
+        did_unsubscribe = False
+
+        def unsubscribe():
+            nonlocal did_unsubscribe
+            did_unsubscribe = True
+            self._bullets_listeners.remove(listener)
+
+        return unsubscribe
 
     @property
     def hearts(self):

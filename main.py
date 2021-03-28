@@ -3,6 +3,7 @@ import pinject
 import pygame
 import pygame.gfxdraw
 
+from ammo_display import AmmoDisplayFactory
 from asteroid import AsteroidGeneratorFactory
 from game_object import GameObjectSystem
 from game_time import GameTime
@@ -78,6 +79,7 @@ class Application:
         asteroid_generator_factory: AsteroidGeneratorFactory,
         spaceship_factory: SpaceshipFactory,
         heart_display_factory: HeartDisplayFactory,
+        ammo_display_factory: AmmoDisplayFactory,
     ):
         self._inputs = inputs
         self._game_time = game_time
@@ -87,6 +89,7 @@ class Application:
         self._asteroid_generator_factory = asteroid_generator_factory
         self._spaceship_factory = spaceship_factory
         self._heart_display_factory = heart_display_factory
+        self._ammo_display_factory = ammo_display_factory
         pass
 
     def add_border(
@@ -131,18 +134,26 @@ class Application:
 
         screen = pygame.display.set_mode((800, 600))
 
+        counter_transform = Transform()
+        counter_transform.set_local_x(400)
+        counter_transform.set_local_y(20)
         counter_text = self._rendering_system.new_text(
-            pygame.font.Font(None, 36), ""
+            game_object=self._game_object_system.new_object(),
+            transform=counter_transform,
+            font=pygame.font.Font(None, 36),
+            text="",
         )
-        counter_text.x = 400
-        counter_text.y = 20
         counter = AsteroidCounter(counter_text)
 
+        fps_transform = Transform()
+        fps_transform.set_local_x(700)
+        fps_transform.set_local_y(30)
         fps_text = self._rendering_system.new_text(
-            pygame.font.Font(None, 36), ""
+            game_object=self._game_object_system.new_object(),
+            transform=fps_transform,
+            font=pygame.font.Font(None, 36),
+            text="",
         )
-        fps_text.x = 700
-        fps_text.y = 30
         fps_text.color = pygame.Color(200, 200, 0)
 
         player = Player()
@@ -161,6 +172,15 @@ class Application:
         heart_display_go = self._game_object_system.new_object()
         self._heart_display_factory(
             heart_display_go, heart_display_transform, player
+        )
+
+        ammo_display_transform = Transform()
+        ammo_display_transform.set_local_x(20)
+        ammo_display_transform.set_local_y(50)
+        self._ammo_display_factory(
+            game_object=self._game_object_system.new_object(),
+            player=player,
+            transform=ammo_display_transform,
         )
 
         self._asteroid_generator_factory(

@@ -65,16 +65,22 @@ class Text:
     def __init__(
         self,
         rendering_system: "RenderingSystem",
+        game_object: GameObject,
+        transform: Transform,
         text: str,
         font: pygame.font.Font,
     ):
         self._system = rendering_system
+        self._game_object = game_object
+        self._transform = transform
+
+        self._is_destroyed = False
+        self._game_object.add_destroy_hook(self.destroy)
+
         self._font = font
         self._text = None
         self._rendered_text = None
         self._new_text = text
-        self.x = 0
-        self.y = 0
         self.color = pygame.Color(255, 255, 255)
 
     @property
@@ -88,11 +94,14 @@ class Text:
         if new_value != self._text:
             self._new_text = new_value
 
-    def disable(self):
-        self._system._sprites.discard(self)
+    def destroy(self):
+        if self._is_destroyed:
+            return
 
-    def enable(self):
-        self._system._sprites.add(self)
+        self._is_destroyed = True
+        self._game_object.remove_destroy_hook(self.destroy)
+
+        self._system._sprites.discard(self)
 
     def render(self, screen: pygame.Surface):
         if self._new_text is not None:
@@ -102,7 +111,10 @@ class Text:
             )
             self._new_text = None
 
-        screen.blit(self._rendered_text, (self.x, self.y))
+        screen.blit(
+            self._rendered_text,
+            (self._transform.x(), self._transform.y()),
+        )
 
 
 class RenderingSystem:
@@ -124,8 +136,20 @@ class RenderingSystem:
         self._sprites.add(sprite)
         return sprite
 
-    def new_text(self, font: pygame.font.Font, text: str):
-        text = Text(self, text, font)
+    def new_text(
+        self,
+        game_object: GameObject,
+        transform: Transform,
+        font: pygame.font.Font,
+        text: str,
+    ):
+        text = Text(
+            self,
+            game_object=game_object,
+            transform=transform,
+            text=text,
+            font=font,
+        )
         self._sprites.add(text)
         return text
 
