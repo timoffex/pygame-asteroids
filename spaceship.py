@@ -156,18 +156,22 @@ class SpaceshipFactory:
     ) -> GameObject:
         go = self._game_object_system.new_object()
 
-        img = pygame.transform.rotate(
-            pygame.transform.scale(
-                pygame.image.load("images/spaceship.png").convert_alpha(),
-                (50, 50),
-            ),
-            -90,
+        img_idle = pygame.transform.scale(
+            pygame.image.load("images/spaceship_idle.png").convert_alpha(),
+            (50, 50),
+        )
+        img_moving = pygame.transform.scale(
+            pygame.image.load("images/spaceship_moving.png").convert_alpha(),
+            (50, 50),
         )
 
         transform = Transform()
         transform.set_local_x(x)
         transform.set_local_y(y)
-        self._rendering_system.new_sprite(go, img, transform)
+
+        sprite = self._rendering_system.new_sprite(go, img_idle, transform)
+        is_idle_sprite = True
+
         body = self._physics_system.new_body(
             game_object=go, transform=transform, mass=1
         )
@@ -196,6 +200,8 @@ class SpaceshipFactory:
         )
 
         def update(delta_time: float) -> None:
+            nonlocal sprite, is_idle_sprite
+
             if self._inputs.is_key_down(pygame.K_d):
                 transform.rotate(-delta_time / 100)
             if self._inputs.is_key_down(pygame.K_a):
@@ -213,6 +219,20 @@ class SpaceshipFactory:
                 c = math.cos(transform.angle())
                 body.velocity_x += delta_time * c / 1000
                 body.velocity_y -= delta_time * s / 1000
+
+                if is_idle_sprite:
+                    sprite.destroy()
+                    sprite = self._rendering_system.new_sprite(
+                        go, img_moving, transform
+                    )
+                    is_idle_sprite = False
+            else:
+                if not is_idle_sprite:
+                    sprite.destroy()
+                    sprite = self._rendering_system.new_sprite(
+                        go, img_idle, transform
+                    )
+                    is_idle_sprite = True
 
             if (
                 self._inputs.is_key_down(pygame.K_SPACE)
