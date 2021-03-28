@@ -145,6 +145,7 @@ class PhysicsSystem:
     def _process_collision_between(
         self, body1: PhysicsBody, body2: PhysicsBody
     ):
+        # TODO: Collisions only correct for centered circles
         dx = body1.transform.x() - body2.transform.x()
         dy = body1.transform.y() - body2.transform.y()
         dist_squared = dx ** 2 + dy ** 2

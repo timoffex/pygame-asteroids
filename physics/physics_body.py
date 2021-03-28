@@ -79,6 +79,12 @@ class PhysicsBody(ABC):
 
         """
 
+        # NOTE: Before I allow non-centered colliders, I'll need to fix how the
+        # physics system computes the collision impulse (right now it only
+        # works for centered circles). I'll also need to implement rotational
+        # physics and allow specifying how much of a body's mass is contained
+        # in each collider (for computing the center of mass).
+
         collider = self._make_circle_collider(radius)
         self._colliders.add(collider)
         return collider
