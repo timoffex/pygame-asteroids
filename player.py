@@ -11,6 +11,8 @@ class Player:
         self._hearts = 3
         self._hearts_listeners: list[Callable[[int], None]] = []
 
+        self.bullets = 100
+
     @property
     def hearts(self):
         return self._hearts

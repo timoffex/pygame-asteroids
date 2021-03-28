@@ -2,6 +2,7 @@ import pinject
 import pygame
 import random
 
+from extra_bullets import ExtraBulletFactory
 from extra_heart import ExtraHeartFactory
 from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
@@ -57,6 +58,7 @@ class AsteroidFactory:
         explosion_factory: ExplosionFactory,
         provide_asteroid_images,
         extra_heart_factory: ExtraHeartFactory,
+        extra_bullet_factory: ExtraBulletFactory,
     ):
         self._game_object_system = game_object_system
         self._physics_system = physics_system
@@ -64,6 +66,7 @@ class AsteroidFactory:
         self._explosion_factory = explosion_factory
         self._provide_asteroid_images = provide_asteroid_images
         self._extra_heart_factory = extra_heart_factory
+        self._extra_bullet_factory = extra_bullet_factory
         pass
 
     def __call__(
@@ -105,10 +108,16 @@ class AsteroidFactory:
         body.velocity_y = vy
 
         class AsteroidHittable(Hittable):
-            def __init__(self, explosion_factory, extra_heart_factory):
+            def __init__(
+                self,
+                explosion_factory,
+                extra_heart_factory,
+                extra_bullet_factory,
+            ):
                 self._num_hits = 0
                 self._explosion_factory = explosion_factory
                 self._extra_heart_factory = extra_heart_factory
+                self._extra_bullet_factory = extra_bullet_factory
                 self._is_destroyed = False
 
             def hit(self):
@@ -127,10 +136,16 @@ class AsteroidFactory:
                         self._extra_heart_factory(
                             x=transform.x(), y=transform.y()
                         )
+                    elif random.uniform(0, 1) < 0.5:
+                        self._extra_bullet_factory(
+                            x=transform.x(), y=transform.y(), amount=30
+                        )
 
         body.add_data(
             AsteroidHittable(
-                self._explosion_factory, self._extra_heart_factory
+                self._explosion_factory,
+                self._extra_heart_factory,
+                self._extra_bullet_factory,
             )
         )
 

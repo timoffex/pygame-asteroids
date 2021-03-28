@@ -4,6 +4,7 @@ import pygame
 import random
 
 from extra_heart import ExtraHeartCollector
+from extra_bullets import ExtraBulletCollector
 from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
@@ -92,28 +93,35 @@ class Guns:
         shooting_transform: Transform,
         shooting_body: PhysicsBody,
         firing_delay_ms: float,
+        player: Player,
     ):
         self._bullet_factory = bullet_factory
         self._shooting_transform = shooting_transform
         self._shooting_body = shooting_body
         self._last_shot_time = -math.inf
         self._firing_delay_ms = firing_delay_ms
+        self._player = player
 
     def is_ready_to_fire(self):
         return (
             pygame.time.get_ticks()
             > self._last_shot_time + self._firing_delay_ms
+            and self._player.bullets > 0
         )
 
     def fire(self):
         self._last_shot_time = pygame.time.get_ticks()
-        self._bullet_factory(
-            x=self._shooting_transform.x(),
-            y=self._shooting_transform.y(),
-            angle=self._shooting_transform.angle(),
-            vx=self._shooting_body.velocity_x,
-            vy=self._shooting_body.velocity_y,
-        )
+
+        if self._player.bullets > 0:
+            self._player.bullets -= 1
+            self._bullet_factory(
+                x=self._shooting_transform.x(),
+                y=self._shooting_transform.y(),
+                angle=self._shooting_transform.angle(),
+                vx=self._shooting_body.velocity_x,
+                vy=self._shooting_body.velocity_y,
+                lifetime_ms=30000,
+            )
 
 
 class GunsFactory:
@@ -126,12 +134,14 @@ class GunsFactory:
         shooting_transform: Transform,
         shooting_body: PhysicsBody,
         firing_delay_ms: float,
+        player: Player,
     ) -> Guns:
         return Guns(
             bullet_factory=self._bullet_factory,
             shooting_transform=shooting_transform,
             shooting_body=shooting_body,
             firing_delay_ms=firing_delay_ms,
+            player=player,
         )
 
 
@@ -152,7 +162,10 @@ class SpaceshipFactory:
         pass
 
     def __call__(
-        self, x: float = 0, y: float = 0, player: Optional[Player] = None
+        self,
+        player: Player,
+        x: float = 0,
+        y: float = 0,
     ) -> GameObject:
         go = self._game_object_system.new_object()
 
@@ -177,13 +190,13 @@ class SpaceshipFactory:
         )
         body.add_circle_collider(radius=25)
 
-        if player:
-            body.add_data(player)
-            body.add_data(PlayerHeartCollector(player))
+        body.add_data(player)
+        body.add_data(PlayerCollector(player))
 
         guns_transform = Transform(parent=transform)
         guns_transform.set_local_x(40)
         guns = self._guns_factory(
+            player=player,
             shooting_transform=guns_transform,
             shooting_body=body,
             firing_delay_ms=100,
@@ -234,9 +247,12 @@ class SpaceshipFactory:
         return go
 
 
-class PlayerHeartCollector(ExtraHeartCollector):
+class PlayerCollector(ExtraHeartCollector, ExtraBulletCollector):
     def __init__(self, player: Player):
         self._player = player
 
     def gain_heart(self):
         self._player.increment_hearts()
+
+    def gain_bullets(self, amount: int):
+        self._player.bullets += amount
