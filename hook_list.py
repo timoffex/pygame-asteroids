@@ -53,8 +53,7 @@ class HookList:
             listener(*args, **kwargs)
 
 
-# pylint: disable=too-few-public-methods
-class Unsubscriber(Protocol):
+class Unsubscriber(Protocol):  # pylint: disable=too-few-public-methods
     """A function that can be called to unsubscribe from a HookList.
 
     It is safe to call this function multiple times: calls after the
