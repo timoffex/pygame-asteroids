@@ -24,7 +24,7 @@ class Sprite:
         self._transform = transform
         self._system = rendering_system
 
-        self._game_object.add_destroy_hook(self.destroy)
+        self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
         self._is_destroyed = False
 
     def destroy(self):
@@ -38,7 +38,7 @@ class Sprite:
 
         self._is_destroyed = True
         self._system._sprites.discard(self)
-        self._game_object.remove_destroy_hook(self.destroy)
+        self._remove_destroy_hook()
 
     def render(self, screen: pygame.Surface):
         x = self._transform.x()
@@ -75,7 +75,7 @@ class Text:
         self._transform = transform
 
         self._is_destroyed = False
-        self._game_object.add_destroy_hook(self.destroy)
+        self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
 
         self._font = font
         self._text = None
@@ -99,7 +99,7 @@ class Text:
             return
 
         self._is_destroyed = True
-        self._game_object.remove_destroy_hook(self.destroy)
+        self._remove_destroy_hook()
 
         self._system._sprites.discard(self)
 

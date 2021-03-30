@@ -32,7 +32,6 @@ class BulletFactory:
         self._rendering_system = rendering_system
         self._game_object_system = game_object_system
         self._provide_bullet_images = provide_bullet_images
-        pass
 
     def __call__(
         self,
@@ -243,7 +242,7 @@ class SpaceshipFactory:
             ):
                 guns.fire()
 
-        go.add_update_hook(update)
+        go.on_update(update)
         return go
 
 

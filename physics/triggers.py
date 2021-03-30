@@ -46,7 +46,7 @@ class TriggerCollider(Collider):
         self._transform = transform
         self._is_destroyed = False
         self._game_object = game_object
-        self._game_object.add_destroy_hook(self.destroy)
+        self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
 
     @property
     def transform(self):
@@ -54,7 +54,7 @@ class TriggerCollider(Collider):
 
     def destroy(self):
         if not self._is_destroyed:
-            self._game_object.remove_destroy_hook(self.destroy)
+            self._remove_destroy_hook()
             self._is_destroyed = True
         super().destroy()
 

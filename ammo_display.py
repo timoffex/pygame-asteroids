@@ -29,7 +29,7 @@ class AmmoDisplay:
 
         # Destroy self when game object is destroyed
         self._is_destroyed = False
-        self._game_object.add_destroy_hook(self.destroy)
+        self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
 
         # When bullet amount changes, run _update_amount()
         self._remove_player_listener = self._player.on_bullets_changed(
@@ -61,8 +61,7 @@ class AmmoDisplay:
             return
 
         self._is_destroyed = True
-        self._game_object.remove_destroy_hook(self.destroy)
-
+        self._remove_destroy_hook()
         self._remove_player_listener()
 
     def _update_amount(self, new_ammo_amount: int):

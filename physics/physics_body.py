@@ -56,7 +56,7 @@ class PhysicsBody(ABC):
         self.velocity_y = 0
         self.mass = mass
 
-        self._game_object.add_destroy_hook(self.destroy)
+        self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
         self._is_destroyed = False
         self._colliders: set["RegularCollider"] = set()
 
@@ -66,7 +66,7 @@ class PhysicsBody(ABC):
             return
 
         self._is_destroyed = True
-        self._game_object.remove_destroy_hook(self.destroy)
+        self._remove_destroy_hook()
 
         colliders = set(self._colliders)
         for collider in colliders:
@@ -143,10 +143,13 @@ class RegularCollider(Collider):
     def __init__(self, physics_body: PhysicsBody):
         super().__init__()
         self._body = physics_body
-        self._body._game_object.add_destroy_hook(self.destroy)
+        self._remove_destroy_hook = self._body._game_object.on_destroy(
+            self.destroy
+        )
 
     def destroy(self):
         self._body._colliders.discard(self)
+        self._remove_destroy_hook()
         super().destroy()
 
     def get_data(self) -> list[Any]:

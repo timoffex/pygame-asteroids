@@ -49,6 +49,8 @@ class GameObjectCoroutine:
         self._is_done = False
         self._did_start_once = False
 
+        self._remove_update_hook = None
+
     def start(self):
         """Starts or resumes this coroutine.
 
@@ -57,7 +59,9 @@ class GameObjectCoroutine:
 
         """
         if self._is_suspended and not self._is_yielding:
-            self._game_object.add_update_hook(self._update_hook)
+            self._remove_update_hook = self._game_object.on_update(
+                self._update_hook
+            )
             self._is_suspended = False
 
             if not self._did_start_once:
@@ -70,7 +74,7 @@ class GameObjectCoroutine:
 
         """
         if not self._is_suspended:
-            self._game_object.remove_update_hook(self._update_hook)
+            self._remove_update_hook()
             self._is_suspended = True
 
     def is_done(self):
@@ -99,12 +103,14 @@ class GameObjectCoroutine:
             raise
 
     def _yield_control(self):
-        self._game_object.remove_update_hook(self._update_hook)
+        self._remove_update_hook()
         self._is_yielding = True
 
     def _resume_control(self):
         if not self._is_suspended:
-            self._game_object.add_update_hook(self._update_hook)
+            self._remove_update_hook = self._game_object.on_update(
+                self._update_hook
+            )
         self._is_yielding = False
 
 

@@ -25,7 +25,7 @@ class HeartDisplay:
         self._heart_image = heart_image
 
         self._is_destroyed = False
-        self._game_object.add_destroy_hook(self.destroy)
+        self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
         self._remove_hearts_hook = self._player.on_hearts_changed(
             self._update_hearts
         )
@@ -38,7 +38,7 @@ class HeartDisplay:
         if not self._is_destroyed:
             self._is_destroyed = True
 
-            self._game_object.remove_destroy_hook(self._destroy)
+            self._remove_destroy_hook()
             self._remove_hearts_hook()
 
     def _update_hearts(self, num_hearts: int):

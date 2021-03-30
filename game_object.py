@@ -1,3 +1,4 @@
+from hook_list import HookList
 from typing import Protocol
 
 
@@ -35,28 +36,20 @@ class GameObject:
 
     def __init__(self, game_object_system):
         self._system = game_object_system
-        self._update_hooks = []
-        self._destroy_hooks = []
+        self._update_hooks = HookList()
+        self._destroy_hooks = HookList()
         self._is_destroyed = False
 
-        self._parent = None
+        self._remove_parent_destroy_hook = None
 
-    def add_update_hook(self, hook: UpdateHook):
-        self._update_hooks.append(hook)
+    def on_update(self, hook: UpdateHook):
+        return self._update_hooks.append(hook)
 
-    def remove_update_hook(self, hook: UpdateHook):
-        self._update_hooks.remove(hook)
-
-    def add_destroy_hook(self, hook: DestroyHook):
-        self._destroy_hooks.append(hook)
-
-    def remove_destroy_hook(self, hook):
-        self._destroy_hooks.remove(hook)
+    def on_destroy(self, hook: DestroyHook):
+        return self._destroy_hooks.append(hook)
 
     def update(self, delta_time: float):
-        hooks = list(self._update_hooks)
-        for hook in hooks:
-            hook(delta_time)
+        self._update_hooks.run_hooks(delta_time=delta_time)
 
     def destroy(self):
         if self._is_destroyed:
@@ -64,21 +57,19 @@ class GameObject:
 
         self._system._game_objects.discard(self)
 
-        hooks = list(self._destroy_hooks)
-        for hook in hooks:
-            hook()
+        self._destroy_hooks.run_hooks()
 
     def set_parent(self, parent: "GameObject"):
         """Sets the parent of this GameObject, causing it to be destroyed if
         the parent is destroyed.
 
         """
-        if self._parent:
-            self._parent.remove_destroy_hook(self.destroy)
+        if self._remove_parent_destroy_hook:
+            self._remove_parent_destroy_hook()
 
-        self._parent = parent
-        if self._parent:
-            self._parent.add_destroy_hook(self.destroy)
+        self._remove_parent_destroy_hook = (
+            parent.on_destroy(self.destroy) if parent else None
+        )
 
 
 class GameObjectSystem:
