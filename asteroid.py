@@ -129,16 +129,14 @@ class AsteroidFactory:
                 if self._num_hits >= 10:
                     self._is_destroyed = True
                     go.destroy()
-                    self._explosion_factory(x=transform.x(), y=transform.y())
+                    self._explosion_factory(x=transform.x, y=transform.y)
                     counter.increment()
 
                     if random.uniform(0, 1) < 0.2:
-                        self._extra_heart_factory(
-                            x=transform.x(), y=transform.y()
-                        )
+                        self._extra_heart_factory(x=transform.x, y=transform.y)
                     elif random.uniform(0, 1) < 0.5:
                         self._extra_bullet_factory(
-                            x=transform.x(), y=transform.y(), amount=30
+                            x=transform.x, y=transform.y, amount=30
                         )
 
         body.add_data(

@@ -90,7 +90,6 @@ class Application:
         self._spaceship_factory = spaceship_factory
         self._heart_display_factory = heart_display_factory
         self._ammo_display_factory = ammo_display_factory
-        pass
 
     def add_border(
         self,

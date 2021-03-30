@@ -146,8 +146,8 @@ class PhysicsSystem:
         self, body1: PhysicsBody, body2: PhysicsBody
     ):
         # TODO: Collisions only correct for centered circles
-        dx = body1.transform.x() - body2.transform.x()
-        dy = body1.transform.y() - body2.transform.y()
+        dx = body1.transform.x - body2.transform.x
+        dy = body1.transform.y - body2.transform.y
         dist_squared = dx ** 2 + dy ** 2
 
         if dist_squared == 0:
@@ -252,8 +252,8 @@ class _CircleColliderMixin(Collider):
         super().destroy()
 
     def _overlaps(self, other: "_CircleColliderMixin"):
-        dx = self.transform.x() - other.transform.x()
-        dy = self.transform.y() - other.transform.y()
+        dx = self.transform.x - other.transform.x
+        dy = self.transform.y - other.transform.y
 
         dist_squared = dx ** 2 + dy ** 2
 
@@ -264,10 +264,10 @@ class _CircleColliderMixin(Collider):
 
     def _make_aabb(self) -> AABB:
         return AABB(
-            x_min=self.transform.x() - self.radius,
-            x_max=self.transform.x() + self.radius,
-            y_min=self.transform.y() - self.radius,
-            y_max=self.transform.y() + self.radius,
+            x_min=self.transform.x - self.radius,
+            x_max=self.transform.x + self.radius,
+            y_min=self.transform.y - self.radius,
+            y_max=self.transform.y + self.radius,
         )
 
 

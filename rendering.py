@@ -41,10 +41,10 @@ class Sprite:
         self._remove_destroy_hook()
 
     def render(self, screen: pygame.Surface):
-        x = self._transform.x()
-        y = self._transform.y()
+        x = self._transform.x
+        y = self._transform.y
         img_rotated = pygame.transform.rotate(
-            self._surface, self._transform.angle() * 180 / math.pi
+            self._surface, self._transform.angle * 180 / math.pi
         )
 
         off_x = (
@@ -113,7 +113,7 @@ class Text:
 
         screen.blit(
             self._rendered_text,
-            (self._transform.x(), self._transform.y()),
+            (self._transform.x, self._transform.y),
         )
 
 

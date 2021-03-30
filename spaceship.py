@@ -114,9 +114,9 @@ class Guns:
         if self._player.bullets > 0:
             self._player.bullets -= 1
             self._bullet_factory(
-                x=self._shooting_transform.x(),
-                y=self._shooting_transform.y(),
-                angle=self._shooting_transform.angle(),
+                x=self._shooting_transform.x,
+                y=self._shooting_transform.y,
+                angle=self._shooting_transform.angle,
                 vx=self._shooting_body.velocity_x,
                 vy=self._shooting_body.velocity_y,
                 lifetime_ms=30000,
@@ -217,8 +217,8 @@ class SpaceshipFactory:
             if self._inputs.is_key_down(pygame.K_w):
                 # Speed up in the direction the ship is facing
 
-                s = math.sin(transform.angle())
-                c = math.cos(transform.angle())
+                s = math.sin(transform.angle)
+                c = math.cos(transform.angle)
                 body.velocity_x += delta_time * c / 1000
                 body.velocity_y -= delta_time * s / 1000
 
