@@ -441,7 +441,9 @@ good-names=i,
            x,
            y,
            vx,
-           vy
+           vy,
+           dx,
+           dy
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
