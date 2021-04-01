@@ -22,8 +22,10 @@ I model this roughly on Unity's Transform component, except:
 * it doesn't have scaling (because pygame doesn't make it easy to
   scale images)
   
-Transforms don't form a hierarchy yet, but I'm leaving that
-possibility open.
+A transform can have a parent transform. Changes to a parent
+transform also move all descendant transforms. This allows defining a
+transform relative to another transform, which is useful for making
+sprites exist at an offset from their main object.
 
 ## GameObject
 
