@@ -1,10 +1,9 @@
 import math
-import pinject
-import pygame
 import random
 
-from extra_heart import ExtraHeartCollector
-from extra_bullets import ExtraBulletCollector
+import pinject
+import pygame
+
 from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
@@ -15,7 +14,6 @@ from physics import PhysicsSystem, PhysicsBody, Collision
 from player import Player
 from rendering import RenderingSystem
 from utils import first_where
-from typing import Optional
 
 
 class BulletFactory:
@@ -190,7 +188,6 @@ class SpaceshipFactory:
         body.add_circle_collider(radius=25)
 
         body.add_data(player)
-        body.add_data(PlayerCollector(player))
 
         guns_transform = Transform(parent=transform)
         guns_transform.set_local_x(40)
@@ -244,14 +241,3 @@ class SpaceshipFactory:
 
         go.on_update(update)
         return go
-
-
-class PlayerCollector(ExtraHeartCollector, ExtraBulletCollector):
-    def __init__(self, player: Player):
-        self._player = player
-
-    def gain_heart(self):
-        self._player.increment_hearts()
-
-    def gain_bullets(self, amount: int):
-        self._player.bullets += amount
