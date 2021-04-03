@@ -183,7 +183,7 @@ class Application:
         )
 
         self._asteroid_generator_factory(
-            counter,
+            counter=counter,
             x=0,
             y=0,
             width=800,

@@ -1,6 +1,11 @@
-import pinject
-import pygame
+"""Defines the AsteroidGeneratorFactory and AsteroidFactory for spawning
+asteroids in the game.
+
+"""
+
 import random
+
+import pygame
 
 from extra_bullets import ExtraBulletFactory
 from extra_heart import ExtraHeartFactory
@@ -15,47 +20,16 @@ from transform import Transform
 from utils import first_where
 
 
-class ExplosionFactory:
-    @pinject.copy_args_to_internal_fields
-    def __init__(
-        self,
-        game_object_system,
-        rendering_system,
-        game_time,
-        provide_explosion_images,
-    ):
-        self._game_object_system: GameObjectSystem
-        self._rendering_system: RenderingSystem
-        self._game_time: GameTime
-        pass
-
-    def __call__(self, x: float, y: float):
-        go = self._game_object_system.new_object()
-        transform = Transform()
-        transform.set_local_x(x)
-        transform.set_local_y(y)
-
-        explosion_images = self._provide_explosion_images()
-
-        def animation():
-            for n in range(25):
-                sprite = self._rendering_system.new_sprite(
-                    go, explosion_images[n], transform
-                )
-                yield resume_after(self._game_time, delay_ms=20)
-                sprite.destroy()
-            go.destroy()
-
-        GameObjectCoroutine(go, animation()).start()
-
-
 class AsteroidFactory:
+
+    # pylint: disable=too-few-public-methods
+
     def __init__(
         self,
         game_object_system: GameObjectSystem,
         physics_system: PhysicsSystem,
         rendering_system: RenderingSystem,
-        explosion_factory: ExplosionFactory,
+        explosion_factory: "_ExplosionFactory",
         provide_asteroid_images,
         extra_heart_factory: ExtraHeartFactory,
         extra_bullet_factory: ExtraBulletFactory,
@@ -67,7 +41,6 @@ class AsteroidFactory:
         self._provide_asteroid_images = provide_asteroid_images
         self._extra_heart_factory = extra_heart_factory
         self._extra_bullet_factory = extra_bullet_factory
-        pass
 
     def __call__(
         self,
@@ -76,21 +49,30 @@ class AsteroidFactory:
         x: float = 400,
         y: float = 300,
         vx: float = 0,
-        vy: float = 0
+        vy: float = 0,
     ) -> GameObject:
-        go = self._game_object_system.new_object()
-
-        img = pygame.transform.scale(
-            random.choice(self._provide_asteroid_images()), (50, 50)
-        )
+        game_object = self._game_object_system.new_object()
 
         transform = Transform()
-        self._rendering_system.new_sprite(go, img, transform)
+        transform.set_local_x(x)
+        transform.set_local_y(y)
+
+        # Sprite
+        self._rendering_system.new_sprite(
+            game_object,
+            pygame.transform.scale(
+                random.choice(self._provide_asteroid_images()), (50, 50)
+            ),
+            transform,
+        )
+
+        # Physics body with a circle collider
         body = self._physics_system.new_body(
-            game_object=go, transform=transform, mass=5
+            game_object=game_object, transform=transform, mass=5
         )
         body.add_circle_collider(radius=25)
 
+        # Collision hook to damage player
         def on_collision(collision: Collision):
             player = first_where(
                 lambda x: isinstance(x, Player),
@@ -101,12 +83,10 @@ class AsteroidFactory:
                 player.decrement_hearts()
 
         body.add_collision_hook(on_collision)
-
-        transform.set_local_x(x)
-        transform.set_local_y(y)
         body.velocity_x = vx
         body.velocity_y = vy
 
+        # Asteroids are Hittable
         class AsteroidHittable(Hittable):
             def __init__(
                 self,
@@ -128,7 +108,7 @@ class AsteroidFactory:
 
                 if self._num_hits >= 10:
                     self._is_destroyed = True
-                    go.destroy()
+                    game_object.destroy()
                     self._explosion_factory(x=transform.x, y=transform.y)
                     counter.increment()
 
@@ -147,10 +127,13 @@ class AsteroidFactory:
             )
         )
 
-        return go
+        return game_object
 
 
 class AsteroidGeneratorFactory:
+
+    # pylint: disable=too-few-public-methods
+
     def __init__(
         self,
         game_object_system: GameObjectSystem,
@@ -163,6 +146,7 @@ class AsteroidGeneratorFactory:
 
     def __call__(
         self,
+        *,
         counter,
         x: float,
         y: float,
@@ -170,7 +154,7 @@ class AsteroidGeneratorFactory:
         height: float,
         interval_ms: float,
     ) -> GameObject:
-        go = self._game_objects.new_object()
+        game_object = self._game_objects.new_object()
 
         def generate_asteroids():
             while True:
@@ -183,6 +167,42 @@ class AsteroidGeneratorFactory:
                 )
                 yield resume_after(time=self._time, delay_ms=interval_ms)
 
-        GameObjectCoroutine(go, generate_asteroids()).start()
+        GameObjectCoroutine(game_object, generate_asteroids()).start()
 
-        return go
+        return game_object
+
+
+class _ExplosionFactory:
+
+    # pylint: disable=too-few-public-methods
+
+    def __init__(
+        self,
+        game_object_system: GameObjectSystem,
+        rendering_system: RenderingSystem,
+        game_time: GameTime,
+        provide_explosion_images,
+    ):
+        self._game_object_system = game_object_system
+        self._rendering_system = rendering_system
+        self._game_time = game_time
+        self._provide_explosion_images = provide_explosion_images
+
+    def __call__(self, x: float, y: float):
+        game_object = self._game_object_system.new_object()
+        transform = Transform()
+        transform.set_local_x(x)
+        transform.set_local_y(y)
+
+        explosion_images = self._provide_explosion_images()
+
+        def animation():
+            for i in range(25):
+                sprite = self._rendering_system.new_sprite(
+                    game_object, explosion_images[i], transform
+                )
+                yield resume_after(self._game_time, delay_ms=20)
+                sprite.destroy()
+            game_object.destroy()
+
+        GameObjectCoroutine(game_object, animation()).start()
