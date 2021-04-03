@@ -2,10 +2,11 @@ A small game written in pygame 2. I use Python 3.9 as the interpreter.
 
 This depends on the `pinject` and `pygame` packages.
 
-The entry point is `main.py`. Controls are: W to accelerate, A and D
-to turn, S to slow down, Space to shoot.
+The entry point is `main.py` (that is, run the game with the command
+`python3.9 main.py`). Controls are: W to accelerate, A and D to turn,
+S to slow down, Space to shoot.
 
-# Concepts
+# (Programming) Concepts
 
 ## Transform
 
@@ -22,10 +23,9 @@ I model this roughly on Unity's Transform component, except:
 * it doesn't have scaling (because pygame doesn't make it easy to
   scale images)
   
-A transform can have a parent transform. Changes to a parent
-transform also move all descendant transforms. This allows defining a
-transform relative to another transform, which is useful for making
-sprites exist at an offset from their main object.
+A transform can have a parent transform. Changes to a parent transform
+also move all descendant transforms. This allows defining a transform
+that is always at some offset relative to another transform.
 
 ## GameObject
 
@@ -58,38 +58,41 @@ responsible for rendering them efficiently (if there were more complex
 graphics). It is meant to be a singleton that is created at startup
 and that stays alive until the app shuts down.
 
-A `Sprite` exists in the context of a specific `RenderingSystem` and
-represents something that will be drawn by that system. You create a
-`Sprite` using the `RenderingSystem.new_sprite` method, and you can't
-move a `Sprite` to another `RenderingSystem` afterward. You can
-temporarily disable a `Sprite` to prevent it from getting rendered.
+There are two types of graphical objects: `Sprite` and `Text`.
+`Sprite` is used to display an image, and `Text` is used to display
+text in a given font. All graphical objects are attached to a
+`GameObject` (meaning they get destroyed when that object is
+destroyed) and are positioned according to a `Transform`.
 
-`Sprite`s keep a reference to a `Transform` which determines where the
-`Sprite` is drawn on the screen. Every `Sprite` is attached to a
-`GameObject` so that it is destroyed when that object is destroyed.
+`Sprite` and `Text` should be created by calling the `new_sprite` and
+`new_text` methods on a `RenderingSystem` object.
 
 ## Physics
 
-Physics are implemented in `physics.py`. I implement elastic
-collisions between circle colliders. The physics don't support angular
-momentum, friction, inelastic collisions or other collider shapes yet,
-but the design of the code doesn't preclude this.
-
-Collisions are detected by looking at all pairs of objects, so
-collision detection has quadratic complexity. Amazingly this works
-fine for the numbers of objects that I have, so I haven't implemented
-a more efficient algorithm yet.
+Physics are implemented in the `physics` directory. I implement
+elastic collisions between circle colliders, and I also implement
+trigger colliders like in Unity. The physics engine doesn't support
+angular momentum, friction, inelastic collisions or other collider
+shapes yet, but the design of the code doesn't preclude this.
 
 The `PhysicsSystem` is a singleton object that manages everything
-related to collisions and physics-based motion.
+related to collisions, triggers, and physics-based motion.
 
 A `PhysicsBody` represents an object that participates in the physics
 simulation (in a specific `PhysicsSystem`). `PhysicsBody`s are created
-using the `PhysicsSystem.new_object` method.
+using the `PhysicsSystem.new_body` method. Use the
+`add_circle_collider` method to specify a collider on the body so that
+it can bounce off of other bodies. Colliders attached to a
+`PhysicsBody` are of type `RegularCollider`.
 
-In Unity, there are separate "Collider" and "RigidBody" components
-which interact with each other, but in my code a `PhysicsBody`
-represents both simulatenously.
+A `TriggerCollider` is a region of space that detects when any other
+kind of collider (`TriggerCollider` or `RegularCollider`) enters it.
+These are created using methods on a `PhysicsSystem` object such as
+`new_circle_trigger`.
+
+All physics objects are attached to a `GameObject` and positioned
+according to a `Transform`. The physics system modifies a
+`PhysicsBody`'s transform to move the body by its velocity.
 
 ## Pinject dependency injection
 

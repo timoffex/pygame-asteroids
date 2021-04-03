@@ -32,7 +32,7 @@ class PhysicsSystem:
         game_object: GameObject,
         transform: Transform,
         mass: float,
-    ):
+    ) -> PhysicsBody:
         return _PhysicsBody(
             physics_system=self,
             game_object=game_object,
@@ -42,7 +42,7 @@ class PhysicsSystem:
 
     def new_circle_trigger(
         self, *, radius: float, transform: Transform, game_object: GameObject
-    ) -> "_CircleTriggerCollider":
+    ) -> TriggerCollider:
         """Creates a circular trigger zone.
 
         The circle is centered on the given transform.
