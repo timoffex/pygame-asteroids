@@ -20,7 +20,7 @@ dependency injection:
 After using a DI framework (Google's Pinject) for a while, I ended up
 having a lot of code like this:
 
-```
+```python
 class AsteroidFactory:
     def __init__(
         self,
