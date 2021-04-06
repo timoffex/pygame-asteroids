@@ -6,6 +6,7 @@ import pygame
 from bullet import Bullet
 import game_objects
 from game_objects import GameObject
+from game_object_coroutine import GameObjectCoroutine, resume_after
 import graphics
 import inputs
 import physics
@@ -15,32 +16,82 @@ from transform import Transform
 from player import Player
 
 
+_spaceship_idle_image = pygame.transform.scale(
+    pygame.image.load("images/spaceship_idle.png").convert_alpha(),
+    (50, 50),
+)
+
+_spaceship_invincible_image = pygame.transform.scale(
+    pygame.image.load("images/spaceship_invincible.png").convert_alpha(),
+    (50, 50),
+)
+
+_spaceship_moving_image = pygame.transform.scale(
+    pygame.image.load("images/spaceship_moving.png").convert_alpha(),
+    (50, 50),
+)
+
+
+class Spaceship:
+    def __init__(
+        self, player: Player, game_object: GameObject, sprite: graphics.Sprite
+    ):
+        self._player = player
+        self._game_object = game_object
+        self._sprite = sprite
+        self._invincibility_ms = 500
+        self._is_invincible = False
+
+    def get_hit_by_asteroid(self):
+        """Hit the spaceship with an asteroid."""
+
+        if not self.is_invincible:
+            self._player.decrement_hearts()
+            GameObjectCoroutine(
+                self._game_object, self._become_invincible()
+            ).start()
+
+    def destroy(self):
+        """Destroys the spaceship."""
+
+        self._game_object.destroy()
+
+    @property
+    def is_invincible(self):
+        """Whether the spaceship is currently invincible because it recently
+        took damage.
+
+        """
+        return self._is_invincible
+
+    def _become_invincible(self):
+        self._is_invincible = True
+        self._sprite.surface = _spaceship_invincible_image
+
+        yield resume_after(self._invincibility_ms)
+
+        self._is_invincible = False
+        self._sprite.surface = _spaceship_idle_image
+
+
 def make_spaceship(
     player: Player,
     x: float = 0,
     y: float = 0,
-) -> GameObject:
+) -> Spaceship:
     go = game_objects.new_object()
-
-    img_idle = pygame.transform.scale(
-        pygame.image.load("images/spaceship_idle.png").convert_alpha(),
-        (50, 50),
-    )
-    img_moving = pygame.transform.scale(
-        pygame.image.load("images/spaceship_moving.png").convert_alpha(),
-        (50, 50),
-    )
 
     transform = Transform()
     transform.set_local_x(x)
     transform.set_local_y(y)
 
-    sprite = graphics.new_sprite(go, img_idle, transform)
-    is_idle_sprite = True
+    sprite = graphics.new_sprite(go, _spaceship_idle_image, transform)
 
     body = physics.new_body(game_object=go, transform=transform, mass=1)
     body.add_circle_collider(radius=25)
 
+    spaceship = Spaceship(player=player, game_object=go, sprite=sprite)
+    body.add_data(spaceship)
     body.add_data(player)
 
     guns_transform = Transform(parent=transform)
@@ -53,7 +104,7 @@ def make_spaceship(
     )
 
     def update(delta_time: float) -> None:
-        nonlocal sprite, is_idle_sprite
+        nonlocal sprite
 
         if inputs.is_key_down(pygame.K_d):
             transform.rotate(-delta_time / 100)
@@ -73,21 +124,17 @@ def make_spaceship(
             body.velocity_x += delta_time * c / 1000
             body.velocity_y -= delta_time * s / 1000
 
-            if is_idle_sprite:
-                sprite.destroy()
-                sprite = graphics.new_sprite(go, img_moving, transform)
-                is_idle_sprite = False
+            if not spaceship.is_invincible:
+                sprite.surface = _spaceship_moving_image
         else:
-            if not is_idle_sprite:
-                sprite.destroy()
-                sprite = graphics.new_sprite(go, img_idle, transform)
-                is_idle_sprite = True
+            if not spaceship.is_invincible:
+                sprite.surface = _spaceship_idle_image
 
         if inputs.is_key_down(pygame.K_SPACE) and guns.is_ready_to_fire():
             guns.fire()
 
     go.on_update(update)
-    return go
+    return spaceship
 
 
 class _Guns:

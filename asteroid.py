@@ -8,12 +8,12 @@ from game_objects import GameObject
 import graphics
 import physics
 from physics import Collision
+from spaceship import Spaceship
 
 from extra_bullets import make_ammo_container
 from extra_heart import make_extra_heart
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from hittable import Hittable
-from player import Player
 from transform import Transform
 from utils import first_where
 
@@ -68,13 +68,13 @@ def make_asteroid(
         if not hurtful:
             return
 
-        player = first_where(
-            lambda x: isinstance(x, Player),
+        spaceship = first_where(
+            lambda x: isinstance(x, Spaceship),
             collision.body_other.get_data(),
         )
 
-        if player:
-            player.decrement_hearts()
+        if spaceship:
+            spaceship.get_hit_by_asteroid()
 
     body.add_collision_hook(on_collision)
     body.velocity_x = vx
