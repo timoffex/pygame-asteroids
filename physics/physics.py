@@ -1,3 +1,10 @@
+"""This module implements physics.
+
+The physics system supports trigger zones that detect when objects enter and
+exit them and physics bodies that can collide with other bodies.
+
+"""
+
 from game_objects import GameObject
 from transform import Transform
 from typing import Tuple
@@ -9,198 +16,190 @@ from .physics_body import Collision, PhysicsBody, RegularCollider
 from .triggers import TriggerCollider, TriggerEvent
 
 
-class PhysicsSystem:
-    """An object that implements physics.
+_bodies: set["_PhysicsBody"] = set()
+_circle_colliders: set["_CircleColliderMixin"] = set()
+_triggers: set["_TriggerCollider"] = set()
 
-    A physics system consists of trigger zones and physics bodies that
-    can have colliders. The system detects collisions, moves physics
-    bodies and runs trigger zone hooks whenever update() is called.
+_debug_bounding_boxes = []
+debug_save_bounding_boxes = False
+
+
+def new_body(
+    *,
+    game_object: GameObject,
+    transform: Transform,
+    mass: float,
+) -> PhysicsBody:
+    return _PhysicsBody(
+        game_object=game_object,
+        transform=transform,
+        mass=mass,
+    )
+
+
+def new_circle_trigger(
+    *, radius: float, transform: Transform, game_object: GameObject
+) -> TriggerCollider:
+    """Creates a circular trigger zone.
+
+    The circle is centered on the given transform.
 
     """
 
-    def __init__(self):
-        self._bodies: set[_PhysicsBody] = set()
-        self._circle_colliders: set[_CircleColliderMixin] = set()
-        self._triggers: set[_TriggerCollider] = set()
+    return _CircleTriggerCollider(
+        radius=radius,
+        transform=transform,
+        game_object=game_object,
+    )
 
-        self._debug_bounding_boxes = []
-        self.debug_save_bounding_boxes = False
 
-    def new_body(
-        self,
-        *,
-        game_object: GameObject,
-        transform: Transform,
-        mass: float,
-    ) -> PhysicsBody:
-        return _PhysicsBody(
-            physics_system=self,
-            game_object=game_object,
-            transform=transform,
-            mass=mass,
-        )
+def update(delta_time: float):
+    # Detect collisions
+    _detect_and_process_collisions()
 
-    def new_circle_trigger(
-        self, *, radius: float, transform: Transform, game_object: GameObject
-    ) -> TriggerCollider:
-        """Creates a circular trigger zone.
+    # Run triggers
+    _run_triggers()
 
-        The circle is centered on the given transform.
+    # Apply velocities
+    for obj in _bodies:
+        obj.transform.add_x(obj.velocity_x * delta_time)
+        obj.transform.add_y(obj.velocity_y * delta_time)
 
-        """
 
-        return _CircleTriggerCollider(
-            physics_system=self,
-            radius=radius,
-            transform=transform,
-            game_object=game_object,
-        )
+def kinetic_energy() -> float:
+    """Computes the total kinetic energy of all physics objects."""
+    return sum(map(lambda obj: obj.kinetic_energy(), _bodies))
 
-    def update(self, delta_time: float):
-        # Detect collisions
-        self._detect_and_process_collisions()
 
-        # Run triggers
-        self._run_triggers()
+def total_momentum() -> (float, float):
+    """Computes the total momentum of all physics objects."""
+    mx = 0
+    my = 0
+    for obj in _bodies:
+        mx += obj.mass * obj.velocity_x
+        my += obj.mass * obj.velocity_y
+    return (mx, my)
 
-        # Apply velocities
-        for obj in self._bodies:
-            obj.transform.add_x(obj.velocity_x * delta_time)
-            obj.transform.add_y(obj.velocity_y * delta_time)
 
-    def kinetic_energy(self) -> float:
-        """Computes the total kinetic energy of all physics objects."""
-        return sum(map(lambda obj: obj.kinetic_energy(), self._bodies))
-
-    def total_momentum(self) -> (float, float):
-        """Computes the total momentum of all physics objects."""
-        mx = 0
-        my = 0
-        for obj in self._bodies:
-            mx += obj.mass * obj.velocity_x
-            my += obj.mass * obj.velocity_y
-        return (mx, my)
-
-    def get_overlapping_pairs(self) -> list[(PhysicsBody, PhysicsBody)]:
-        quadtree = Quadtree(
-            list(
-                map(
-                    lambda circle: QuadtreeCollider(
-                        aabb=circle._make_aabb(), data=circle
-                    ),
-                    self._circle_colliders,
-                )
+def get_overlapping_pairs() -> list[(PhysicsBody, PhysicsBody)]:
+    quadtree = Quadtree(
+        list(
+            map(
+                lambda circle: QuadtreeCollider(
+                    aabb=circle._make_aabb(), data=circle
+                ),
+                _circle_colliders,
             )
         )
+    )
 
-        if self.debug_save_bounding_boxes:
-            self._debug_bounding_boxes = quadtree.get_debug_bounding_boxes()
+    if debug_save_bounding_boxes:
+        global _debug_bounding_boxes
+        _debug_bounding_boxes = quadtree.get_debug_bounding_boxes()
 
-        return map(
-            lambda pair: (pair[0].data, pair[1].data),
-            filter(
-                lambda pair: pair[0].data._overlaps(pair[1].data),
-                quadtree.get_nearby_pairs(),
-            ),
-        )
+    return map(
+        lambda pair: (pair[0].data, pair[1].data),
+        filter(
+            lambda pair: pair[0].data._overlaps(pair[1].data),
+            quadtree.get_nearby_pairs(),
+        ),
+    )
 
-    def debug_get_bounding_boxes(self) -> list[AABB]:
-        return self._debug_bounding_boxes
 
-    def _run_triggers(self):
-        triggers = list(self._triggers)
-        for trigger in triggers:
-            trigger.run_triggers()
+def debug_get_bounding_boxes() -> list[AABB]:
+    return _debug_bounding_boxes
 
-    def _detect_and_process_collisions(self):
-        collisions: set[Tuple[PhysicsBody, PhysicsBody]] = set()
 
-        def record_collision(obj1: PhysicsBody, obj2: PhysicsBody):
-            collisions.add(
-                (obj1, obj2) if id(obj1) < id(obj2) else (obj2, obj1)
-            )
+def _run_triggers():
+    triggers = list(_triggers)
+    for trigger in triggers:
+        trigger.run_triggers()
 
-        for (obj1, obj2) in self.get_overlapping_pairs():
-            # Compute collision impulse that is orthogonal to the
-            # collision plane and conserves momentum and kinetic
-            # energy
 
-            # TODO: Allow non-elastic collisions (friction)
-            # TODO: Implement angular momentum
+def _detect_and_process_collisions():
+    collisions: set[Tuple[PhysicsBody, PhysicsBody]] = set()
 
-            if isinstance(obj1, _TriggerCollider):
-                obj1.add_current_collider(obj2)
+    def record_collision(obj1: PhysicsBody, obj2: PhysicsBody):
+        collisions.add((obj1, obj2) if id(obj1) < id(obj2) else (obj2, obj1))
 
-            if isinstance(obj2, _TriggerCollider):
-                obj2.add_current_collider(obj1)
+    for (obj1, obj2) in get_overlapping_pairs():
+        # Compute collision impulse that is orthogonal to the
+        # collision plane and conserves momentum and kinetic
+        # energy
 
-            if isinstance(obj1, _RegularCollider) and isinstance(
-                obj2, _RegularCollider
-            ):
-                record_collision(obj1.body, obj2.body)
+        # TODO: Allow non-elastic collisions (friction)
+        # TODO: Implement angular momentum
 
-        for (body1, body2) in collisions:
-            self._process_collision_between(body1, body2)
+        if isinstance(obj1, _TriggerCollider):
+            obj1.add_current_collider(obj2)
 
-    def _process_collision_between(
-        self, body1: PhysicsBody, body2: PhysicsBody
-    ):
-        # TODO: Collisions only correct for centered circles
-        dx = body1.transform.x - body2.transform.x
-        dy = body1.transform.y - body2.transform.y
-        dist_squared = dx ** 2 + dy ** 2
+        if isinstance(obj2, _TriggerCollider):
+            obj2.add_current_collider(obj1)
 
-        if dist_squared == 0:
-            # give up, objects are perfectly overlapping so we
-            # can't figure out a direction in which they should
-            # bounce
-            return
+        if isinstance(obj1, _RegularCollider) and isinstance(
+            obj2, _RegularCollider
+        ):
+            record_collision(obj1.body, obj2.body)
 
-        vx = body1.velocity_x - body2.velocity_x
-        vy = body1.velocity_y - body2.velocity_y
+    for (body1, body2) in collisions:
+        _process_collision_between(body1, body2)
 
-        v_dot_d = vx * dx + vy * dy
-        if v_dot_d > 0:
-            # The objects were overlapping but moving away from
-            # each other, so don't bounce them
-            return
 
-        mass_divisor = 1 / body1.mass + 1 / body2.mass
+def _process_collision_between(body1: PhysicsBody, body2: PhysicsBody):
+    # TODO: Collisions only correct for centered circles
+    dx = body1.transform.x - body2.transform.x
+    dy = body1.transform.y - body2.transform.y
+    dist_squared = dx ** 2 + dy ** 2
 
-        if mass_divisor > 0:
-            # The multiplier that ensures the bounce preserves kinetic
-            # energy
-            t = -(2 * v_dot_d / mass_divisor / dist_squared)
+    if dist_squared == 0:
+        # give up, objects are perfectly overlapping so we
+        # can't figure out a direction in which they should
+        # bounce
+        return
 
-            body1.add_impulse((dx * t, dy * t))
-            body2.add_impulse((-dx * t, -dy * t))
+    vx = body1.velocity_x - body2.velocity_x
+    vy = body1.velocity_y - body2.velocity_y
 
-        collision1 = Collision(body_self=body1, body_other=body2)
-        for hook in body1._collision_hooks:
-            hook(collision=collision1)
+    v_dot_d = vx * dx + vy * dy
+    if v_dot_d > 0:
+        # The objects were overlapping but moving away from
+        # each other, so don't bounce them
+        return
 
-        collision2 = Collision(body_self=body2, body_other=body1)
-        for hook in body2._collision_hooks:
-            hook(collision=collision2)
+    mass_divisor = 1 / body1.mass + 1 / body2.mass
+
+    if mass_divisor > 0:
+        # The multiplier that ensures the bounce preserves kinetic
+        # energy
+        t = -(2 * v_dot_d / mass_divisor / dist_squared)
+
+        body1.add_impulse((dx * t, dy * t))
+        body2.add_impulse((-dx * t, -dy * t))
+
+    collision1 = Collision(body_self=body1, body_other=body2)
+    for hook in body1._collision_hooks:
+        hook(collision=collision1)
+
+    collision2 = Collision(body_self=body2, body_other=body1)
+    for hook in body2._collision_hooks:
+        hook(collision=collision2)
 
 
 class _TriggerCollider(TriggerCollider):
     def __init__(
         self,
-        physics_system: PhysicsSystem,
         transform: Transform,
         game_object: GameObject,
     ):
         super().__init__(transform=transform, game_object=game_object)
 
-        self._system = physics_system
-        self._system._triggers.add(self)
+        _triggers.add(self)
 
         self._previous_colliders: set[Collider] = set()
         self._new_colliders: set[Collider] = set()
 
     def destroy(self):
-        self._system._triggers.discard(self)
+        _triggers.discard(self)
         super().destroy()
 
     def run_triggers(self):
@@ -231,24 +230,22 @@ class _TriggerCollider(TriggerCollider):
 
 
 class _RegularCollider(RegularCollider):
-    def __init__(self, physics_system: PhysicsSystem, **kwargs):
-        super().__init__(**kwargs)
+    pass
 
 
 class _CircleColliderMixin(Collider):
-    def __init__(self, physics_system: PhysicsSystem, radius: float, **kwargs):
-        super().__init__(physics_system=physics_system, **kwargs)
+    def __init__(self, radius: float, **kwargs):
+        super().__init__(**kwargs)
         self._radius = radius
 
-        self._system = physics_system
-        self._system._circle_colliders.add(self)
+        _circle_colliders.add(self)
 
     @property
     def radius(self):
         return self._radius
 
     def destroy(self):
-        self._system._circle_colliders.discard(self)
+        _circle_colliders.discard(self)
         super().destroy()
 
     def _overlaps(self, other: "_CircleColliderMixin"):
@@ -282,7 +279,6 @@ class _CircleTriggerCollider(_CircleColliderMixin, _TriggerCollider):
 class _PhysicsBody(PhysicsBody):
     def __init__(
         self,
-        physics_system: PhysicsSystem,
         game_object: GameObject,
         transform: Transform,
         mass: float,
@@ -293,13 +289,10 @@ class _PhysicsBody(PhysicsBody):
             mass=mass,
         )
 
-        self._system = physics_system
-        self._system._bodies.add(self)
+        _bodies.add(self)
 
     def destroy(self):
-        self._system._bodies.discard(self)
+        _bodies.discard(self)
 
     def _make_circle_collider(self, radius: float) -> RegularCollider:
-        return _CircleCollider(
-            physics_body=self, physics_system=self._system, radius=radius
-        )
+        return _CircleCollider(physics_body=self, radius=radius)

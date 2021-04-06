@@ -13,11 +13,13 @@ from game_objects import GameObject
 import game_time
 import graphics
 
+import physics
+from physics import Collision
+
 from extra_bullets import ExtraBulletFactory
 from extra_heart import ExtraHeartFactory
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from hittable import Hittable
-from physics import PhysicsSystem, Collision
 from player import Player
 from transform import Transform
 from utils import first_where
@@ -29,13 +31,11 @@ class AsteroidFactory:
 
     def __init__(
         self,
-        physics_system: PhysicsSystem,
         explosion_factory: "_ExplosionFactory",
         provide_asteroid_images,
         extra_heart_factory: ExtraHeartFactory,
         extra_bullet_factory: ExtraBulletFactory,
     ):
-        self._physics_system = physics_system
         self._explosion_factory = explosion_factory
         self._provide_asteroid_images = provide_asteroid_images
         self._extra_heart_factory = extra_heart_factory
@@ -66,7 +66,7 @@ class AsteroidFactory:
         )
 
         # Physics body with a circle collider
-        body = self._physics_system.new_body(
+        body = physics.new_body(
             game_object=game_object, transform=transform, mass=5
         )
         body.add_circle_collider(radius=25)

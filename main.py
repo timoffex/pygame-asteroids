@@ -9,11 +9,11 @@ from game_objects import GameObject
 import graphics
 from graphics import Text
 import inputs
+import physics
 
 from ammo_display import AmmoDisplay
 from asteroid import AsteroidGeneratorFactory
 from heart_display import HeartDisplayFactory
-from physics import PhysicsSystem
 from player import Player
 from spaceship import SpaceshipFactory
 from transform import Transform
@@ -74,12 +74,10 @@ class ApplicationBindingSpec(pinject.BindingSpec):
 class Application:
     def __init__(
         self,
-        physics_system: PhysicsSystem,
         asteroid_generator_factory: AsteroidGeneratorFactory,
         spaceship_factory: SpaceshipFactory,
         heart_display_factory: HeartDisplayFactory,
     ):
-        self._physics_system = physics_system
         self._asteroid_generator_factory = asteroid_generator_factory
         self._spaceship_factory = spaceship_factory
         self._heart_display_factory = heart_display_factory
@@ -96,7 +94,7 @@ class Application:
         t.set_local_x(border_x + outward_x * radius)
         t.set_local_y(border_y + outward_y * radius)
 
-        body = self._physics_system.new_body(
+        body = physics.new_body(
             game_object=game_objects.new_object(),
             mass=math.inf,
             transform=t,
@@ -202,13 +200,13 @@ class Application:
 
             game_objects.update(delta_time)
             game_time.run_callbacks()
-            self._physics_system.update(delta_time)
+            physics.update(delta_time)
 
             # Clear the screen
             screen.fill(pygame.Color(0, 0, 0))
 
             # Draw quadtree constructed in physics step
-            # for box in self._physics_system.debug_get_bounding_boxes():
+            # for box in physics.debug_get_bounding_boxes():
             #     pygame.gfxdraw.rectangle(
             #         screen,
             #         pygame.Rect(

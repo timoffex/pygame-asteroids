@@ -11,7 +11,9 @@ from game_objects import GameObject
 import graphics
 from graphics import Sprite
 
-from physics import PhysicsSystem, TriggerCollider, TriggerEvent
+import physics
+from physics import TriggerCollider, TriggerEvent
+
 from player import Player
 from transform import Transform
 from utils import first_where
@@ -32,9 +34,6 @@ class CollectableItemFactory:
 
     # pylint: disable=too-few-public-methods
     # This has to be a class to be injectable with Pinject.
-
-    def __init__(self, physics_system: PhysicsSystem):
-        self._physics_system = physics_system
 
     def __call__(
         self,
@@ -63,7 +62,7 @@ class CollectableItemFactory:
             transform=transform,
         )
 
-        trigger_zone = self._physics_system.new_circle_trigger(
+        trigger_zone = physics.new_circle_trigger(
             radius=trigger_radius,
             game_object=game_object,
             transform=transform,

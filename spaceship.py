@@ -9,22 +9,18 @@ import game_objects
 from game_objects import GameObject
 import graphics
 import inputs
+import physics
+from physics import PhysicsBody, Collision
 
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from hittable import Hittable
 from transform import Transform
-from physics import PhysicsSystem, PhysicsBody, Collision
 from player import Player
 from utils import first_where
 
 
 class BulletFactory:
-    def __init__(
-        self,
-        physics_system: PhysicsSystem,
-        provide_bullet_images,
-    ):
-        self._physics_system = physics_system
+    def __init__(self, provide_bullet_images):
         self._provide_bullet_images = provide_bullet_images
 
     def __call__(
@@ -48,9 +44,7 @@ class BulletFactory:
 
         graphics.new_sprite(go, img, transform)
 
-        body = self._physics_system.new_body(
-            game_object=go, transform=transform, mass=0.8
-        )
+        body = physics.new_body(game_object=go, transform=transform, mass=0.8)
         body.add_circle_collider(radius=7.5)
 
         speed = 0.1
@@ -139,14 +133,8 @@ class GunsFactory:
 
 
 class SpaceshipFactory:
-    def __init__(
-        self,
-        physics_system: PhysicsSystem,
-        guns_factory: GunsFactory,
-    ):
-        self._physics_system = physics_system
+    def __init__(self, guns_factory: GunsFactory):
         self._guns_factory = guns_factory
-        pass
 
     def __call__(
         self,
@@ -172,9 +160,7 @@ class SpaceshipFactory:
         sprite = graphics.new_sprite(go, img_idle, transform)
         is_idle_sprite = True
 
-        body = self._physics_system.new_body(
-            game_object=go, transform=transform, mass=1
-        )
+        body = physics.new_body(game_object=go, transform=transform, mass=1)
         body.add_circle_collider(radius=25)
 
         body.add_data(player)
