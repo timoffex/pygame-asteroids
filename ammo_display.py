@@ -1,7 +1,8 @@
 import pinject
 import pygame
 
-from game_object import GameObject, GameObjectSystem
+from game_objects import GameObject
+
 from player import Player
 from rendering import RenderingSystem
 from transform import Transform
@@ -12,13 +13,11 @@ class AmmoDisplay:
         self,
         *,
         rendering_system: RenderingSystem,
-        game_object_system: GameObjectSystem,
         player: Player,
         transform: Transform,
         game_object: GameObject,
     ):
         self._rendering_system = rendering_system
-        self._game_object_system = game_object_system
         self._player = player
         self._transform = transform
         self._game_object = game_object
@@ -33,7 +32,7 @@ class AmmoDisplay:
 
         # When bullet amount changes, run _update_amount()
         self._remove_player_listener = self._player.on_bullets_changed(
-            lambda x: self._update_amount(x)
+            self._update_amount
         )
 
         # Ammo sprite
@@ -70,7 +69,7 @@ class AmmoDisplay:
 
 class AmmoDisplayFactory:
     @pinject.copy_args_to_internal_fields
-    def __init__(self, rendering_system, game_object_system):
+    def __init__(self, rendering_system):
         pass
 
     def __call__(
@@ -81,7 +80,6 @@ class AmmoDisplayFactory:
     ) -> AmmoDisplay:
         return AmmoDisplay(
             rendering_system=self._rendering_system,
-            game_object_system=self._game_object_system,
             player=player,
             transform=transform,
             game_object=game_object,

@@ -7,9 +7,11 @@ import random
 
 import pygame
 
+import game_objects
+from game_objects import GameObject
+
 from extra_bullets import ExtraBulletFactory
 from extra_heart import ExtraHeartFactory
-from game_object import GameObject, GameObjectSystem
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
 from hittable import Hittable
@@ -26,7 +28,6 @@ class AsteroidFactory:
 
     def __init__(
         self,
-        game_object_system: GameObjectSystem,
         physics_system: PhysicsSystem,
         rendering_system: RenderingSystem,
         explosion_factory: "_ExplosionFactory",
@@ -34,7 +35,6 @@ class AsteroidFactory:
         extra_heart_factory: ExtraHeartFactory,
         extra_bullet_factory: ExtraBulletFactory,
     ):
-        self._game_object_system = game_object_system
         self._physics_system = physics_system
         self._rendering_system = rendering_system
         self._explosion_factory = explosion_factory
@@ -51,7 +51,7 @@ class AsteroidFactory:
         vx: float = 0,
         vy: float = 0,
     ) -> GameObject:
-        game_object = self._game_object_system.new_object()
+        game_object = game_objects.new_object()
 
         transform = Transform()
         transform.set_local_x(x)
@@ -136,11 +136,9 @@ class AsteroidGeneratorFactory:
 
     def __init__(
         self,
-        game_object_system: GameObjectSystem,
         game_time: GameTime,
         asteroid_factory: AsteroidFactory,
     ):
-        self._game_objects = game_object_system
         self._time = game_time
         self._asteroid_factory = asteroid_factory
 
@@ -154,7 +152,7 @@ class AsteroidGeneratorFactory:
         height: float,
         interval_ms: float,
     ) -> GameObject:
-        game_object = self._game_objects.new_object()
+        game_object = game_objects.new_object()
 
         def generate_asteroids():
             while True:
@@ -178,18 +176,16 @@ class _ExplosionFactory:
 
     def __init__(
         self,
-        game_object_system: GameObjectSystem,
         rendering_system: RenderingSystem,
         game_time: GameTime,
         provide_explosion_images,
     ):
-        self._game_object_system = game_object_system
         self._rendering_system = rendering_system
         self._game_time = game_time
         self._provide_explosion_images = provide_explosion_images
 
     def __call__(self, x: float, y: float):
-        game_object = self._game_object_system.new_object()
+        game_object = game_objects.new_object()
         transform = Transform()
         transform.set_local_x(x)
         transform.set_local_y(y)

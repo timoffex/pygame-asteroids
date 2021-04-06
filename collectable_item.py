@@ -5,7 +5,9 @@ from typing import Callable
 
 import pygame
 
-from game_object import GameObject, GameObjectSystem
+import game_objects
+from game_objects import GameObject
+
 from physics import PhysicsSystem, TriggerCollider, TriggerEvent
 from player import Player
 from rendering import RenderingSystem, Sprite
@@ -31,11 +33,9 @@ class CollectableItemFactory:
 
     def __init__(
         self,
-        game_object_system: GameObjectSystem,
         physics_system: PhysicsSystem,
         rendering_system: RenderingSystem,
     ):
-        self._game_object_system = game_object_system
         self._physics_system = physics_system
         self._rendering_system = rendering_system
 
@@ -55,7 +55,7 @@ class CollectableItemFactory:
         destroyed.
         """
 
-        game_object = self._game_object_system.new_object()
+        game_object = game_objects.new_object()
         transform = Transform()
         transform.set_local_x(x)
         transform.set_local_y(y)

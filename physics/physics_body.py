@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from game_object import GameObject
+from game_objects import GameObject
 from transform import Transform
 from typing import Any, Protocol
 

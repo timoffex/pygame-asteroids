@@ -1,29 +1,31 @@
-"""Defines the concept of a GameObject."""
+"""This module defines GameObjects and keeps track of all GameObjects in the
+game.
+
+"""
 
 from abc import ABC, abstractmethod
-from typing import Callable, Protocol
+from typing import Callable
 
 from hook_list import HookList, Unsubscriber
 
 
-class UpdateHook(Protocol):  # pylint: disable=too-few-public-methods
-    """Protocol for GameObject update hooks."""
+UpdateHook = Callable[[float], None]
+"""A function that is attached to a GameObject and runs once on every frame
+until that GameObject is destroyed.
 
-    def __call__(self, update_hook: float) -> None:
-        ...
+The function's argument is the approximate number of milliseconds that have
+passed since the last frame.
+"""
 
 
-class DestroyHook(Protocol):  # pylint: disable=too-few-public-methods
-    """Protocol for GameObject destroy hooks."""
-
-    def __call__(self) -> None:
-        ...
+DestroyHook = Callable[[], None]
+"""A function that runs when a GameObject is destroyed."""
 
 
 class GameObject(ABC):
     """An object in the game.
 
-    Create GameObjects using GameObjectSystem.new_object.
+    Create GameObjects using ``new_object``.
 
     The purpose of GameObject is to be able to refer to a logical
     entity in the game. You can add update hooks to a GameObject that
@@ -64,34 +66,24 @@ class GameObject(ABC):
         """
 
 
-class GameObjectSystem:
-    """A collection of GameObjects."""
+def new_object() -> GameObject:
+    """Creates and returns a new GameObject."""
+    game_object = _GameObject()
+    _game_objects.add(game_object)
+    return game_object
 
-    def __init__(self):
-        self._game_objects: set[_GameObject] = set()
 
-    def new_object(self) -> GameObject:
-        """Creates and returns a new GameObject inside this system."""
-        game_object = _GameObject(self._discard_game_object)
-        self._game_objects.add(game_object)
-        return game_object
-
-    def update(self, delta_time: float):
-        """Updates all GameObjects in this system."""
-        # Make a copy of self._game_objects in case new objects are
-        # created or old objects are destroyed during update
-        game_objects = set(self._game_objects)
-        for obj in game_objects:
-            obj.update(delta_time=delta_time)
-
-    def _discard_game_object(self, game_object: "_GameObject"):
-        """Removes the game_object from this system."""
-        self._game_objects.discard(game_object)
+def update(delta_time: float):
+    """Updates all GameObjects."""
+    # Make a copy of _game_objects in case new objects are created or old
+    # objects are destroyed during update
+    game_objects = set(_game_objects)
+    for obj in game_objects:
+        obj.update(delta_time=delta_time)
 
 
 class _GameObject(GameObject):
-    def __init__(self, discard_self: Callable[["_GameObject"], None]):
-        self._discard_self = discard_self
+    def __init__(self):
         self._update_hooks = HookList()
         self._destroy_hooks = HookList()
         self._is_destroyed = False
@@ -109,8 +101,8 @@ class _GameObject(GameObject):
             return
 
         self._is_destroyed = True
-        self._discard_self(self)
         self._destroy_hooks.run_hooks()
+        _discard_game_object(self)
 
     def update(self, delta_time: float):
         """Runs the update hooks on this GameObject."""
@@ -127,3 +119,11 @@ class _GameObject(GameObject):
         self._remove_parent_destroy_hook = (
             parent.on_destroy(self.destroy) if parent else None
         )
+
+
+_game_objects: set[_GameObject] = set()
+
+
+def _discard_game_object(game_object: _GameObject):
+    """Removes the game_object."""
+    _game_objects.discard(game_object)

@@ -4,7 +4,9 @@ import random
 import pinject
 import pygame
 
-from game_object import GameObject, GameObjectSystem
+import game_objects
+from game_objects import GameObject
+
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
 from hittable import Hittable
@@ -22,13 +24,11 @@ class BulletFactory:
         game_time: GameTime,
         physics_system: PhysicsSystem,
         rendering_system: RenderingSystem,
-        game_object_system: GameObjectSystem,
         provide_bullet_images,
     ):
         self._game_time = game_time
         self._physics_system = physics_system
         self._rendering_system = rendering_system
-        self._game_object_system = game_object_system
         self._provide_bullet_images = provide_bullet_images
 
     def __call__(
@@ -41,7 +41,7 @@ class BulletFactory:
         vy: float = 0,
         lifetime_ms: float = 10000
     ) -> GameObject:
-        go = self._game_object_system.new_object()
+        go = game_objects.new_object()
 
         img = random.choice(self._provide_bullet_images())
 
@@ -146,13 +146,11 @@ class SpaceshipFactory:
     def __init__(
         self,
         inputs: Inputs,
-        game_object_system: GameObjectSystem,
         rendering_system: RenderingSystem,
         physics_system: PhysicsSystem,
         guns_factory: GunsFactory,
     ):
         self._inputs = inputs
-        self._game_object_system = game_object_system
         self._rendering_system = rendering_system
         self._physics_system = physics_system
         self._guns_factory = guns_factory
@@ -164,7 +162,7 @@ class SpaceshipFactory:
         x: float = 0,
         y: float = 0,
     ) -> GameObject:
-        go = self._game_object_system.new_object()
+        go = game_objects.new_object()
 
         img_idle = pygame.transform.scale(
             pygame.image.load("images/spaceship_idle.png").convert_alpha(),

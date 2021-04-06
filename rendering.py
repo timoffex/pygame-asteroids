@@ -6,7 +6,7 @@ from typing import Callable
 
 import pygame
 
-from game_object import GameObject
+from game_objects import GameObject
 from transform import Transform
 
 

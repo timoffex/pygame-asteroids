@@ -3,9 +3,11 @@ import pinject
 import pygame
 import pygame.gfxdraw
 
+import game_objects
+from game_objects import GameObject
+
 from ammo_display import AmmoDisplayFactory
 from asteroid import AsteroidGeneratorFactory
-from game_object import GameObjectSystem
 from game_time import GameTime
 from heart_display import HeartDisplayFactory
 from inputs import Inputs
@@ -73,7 +75,6 @@ class Application:
         self,
         inputs: Inputs,
         game_time: GameTime,
-        game_object_system: GameObjectSystem,
         rendering_system: RenderingSystem,
         physics_system: PhysicsSystem,
         asteroid_generator_factory: AsteroidGeneratorFactory,
@@ -83,7 +84,6 @@ class Application:
     ):
         self._inputs = inputs
         self._game_time = game_time
-        self._game_object_system = game_object_system
         self._physics_system = physics_system
         self._rendering_system = rendering_system
         self._asteroid_generator_factory = asteroid_generator_factory
@@ -104,7 +104,7 @@ class Application:
         t.set_local_y(border_y + outward_y * radius)
 
         body = self._physics_system.new_body(
-            game_object=self._game_object_system.new_object(),
+            game_object=game_objects.new_object(),
             mass=math.inf,
             transform=t,
         )
@@ -137,7 +137,7 @@ class Application:
         counter_transform.set_local_x(400)
         counter_transform.set_local_y(20)
         counter_text = self._rendering_system.new_text(
-            game_object=self._game_object_system.new_object(),
+            game_object=game_objects.new_object(),
             transform=counter_transform,
             font=pygame.font.Font(None, 36),
             text="",
@@ -148,7 +148,7 @@ class Application:
         fps_transform.set_local_x(700)
         fps_transform.set_local_y(30)
         fps_text = self._rendering_system.new_text(
-            game_object=self._game_object_system.new_object(),
+            game_object=game_objects.new_object(),
             transform=fps_transform,
             font=pygame.font.Font(None, 36),
             text="",
@@ -168,7 +168,7 @@ class Application:
         heart_display_transform = Transform()
         heart_display_transform.set_local_x(20)
         heart_display_transform.set_local_y(20)
-        heart_display_go = self._game_object_system.new_object()
+        heart_display_go = game_objects.new_object()
         self._heart_display_factory(
             heart_display_go, heart_display_transform, player
         )
@@ -177,7 +177,7 @@ class Application:
         ammo_display_transform.set_local_x(20)
         ammo_display_transform.set_local_y(50)
         self._ammo_display_factory(
-            game_object=self._game_object_system.new_object(),
+            game_object=game_objects.new_object(),
             player=player,
             transform=ammo_display_transform,
         )
@@ -207,7 +207,7 @@ class Application:
             if self._inputs.did_quit():
                 break
 
-            self._game_object_system.update(delta_time)
+            game_objects.update(delta_time)
             self._game_time.run_callbacks()
             self._physics_system.update(delta_time)
 

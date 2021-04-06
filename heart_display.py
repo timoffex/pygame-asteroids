@@ -1,7 +1,9 @@
 import pinject
 import pygame
 
-from game_object import GameObject, GameObjectSystem
+import game_objects
+from game_objects import GameObject
+
 from player import Player
 from rendering import RenderingSystem
 from transform import Transform
@@ -11,14 +13,12 @@ class HeartDisplay:
     def __init__(
         self,
         rendering_system: RenderingSystem,
-        game_object_system: GameObjectSystem,
         player: Player,
         transform: Transform,
         game_object: GameObject,
         heart_image: pygame.Surface,
     ):
         self._rendering_system = rendering_system
-        self._game_object_system = game_object_system
         self._player = player
         self._transform = transform
         self._game_object = game_object
@@ -51,7 +51,7 @@ class HeartDisplay:
                 self._heart_objects.append(self._new_heart(new_heart_idx))
 
     def _new_heart(self, heart_idx: int) -> GameObject:
-        heart_object = self._game_object_system.new_object()
+        heart_object = game_objects.new_object()
 
         heart_transform = Transform(parent=self._transform)
         heart_transform.set_local_x(heart_idx * self._heart_x_offset)
@@ -67,9 +67,7 @@ class HeartDisplay:
 
 class HeartDisplayFactory:
     @pinject.copy_args_to_internal_fields
-    def __init__(
-        self, rendering_system, game_object_system, provide_heart_image
-    ):
+    def __init__(self, rendering_system, provide_heart_image):
         pass
 
     def __call__(
@@ -77,7 +75,6 @@ class HeartDisplayFactory:
     ):
         return HeartDisplay(
             self._rendering_system,
-            self._game_object_system,
             player=player,
             transform=transform,
             game_object=game_object,

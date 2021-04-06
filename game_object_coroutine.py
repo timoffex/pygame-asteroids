@@ -1,4 +1,4 @@
-from game_object import GameObject
+from game_objects import GameObject
 from game_time import GameTime
 from typing import Callable, Generator, Optional
 
