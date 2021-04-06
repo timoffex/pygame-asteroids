@@ -2,6 +2,7 @@ import random
 
 import pygame
 
+import asteroid_counter
 import game_objects
 from game_objects import GameObject
 import graphics
@@ -21,13 +22,14 @@ _asteroid_images = [pygame.image.load("images/asteroid.png").convert_alpha()]
 
 
 def make_asteroid(
-    counter,
     *,
     x: float = 400,
     y: float = 300,
     vx: float = 0,
     vy: float = 0,
 ) -> GameObject:
+    """Spawns an asteroid and returns its root GameObject."""
+
     game_object = game_objects.new_object()
 
     transform = Transform()
@@ -77,7 +79,7 @@ def make_asteroid(
                 self._is_destroyed = True
                 game_object.destroy()
                 _make_explosion(x=transform.x, y=transform.y)
-                counter.increment()
+                asteroid_counter.increment()
 
                 if random.uniform(0, 1) < 0.2:
                     make_extra_heart(x=transform.x, y=transform.y)
@@ -93,19 +95,23 @@ def make_asteroid(
 
 def make_asteroid_generator(
     *,
-    counter,
     x: float,
     y: float,
     width: float,
     height: float,
     interval_ms: float,
 ) -> GameObject:
+    """Creates an asteroid generator that randomly spawns asteroids in
+    the rectangular region with the top-left corner at (x, y) and the
+    specified width and height.
+
+    """
+
     game_object = game_objects.new_object()
 
     def generate_asteroids():
         while True:
             make_asteroid(
-                counter,
                 x=random.uniform(x, x + width),
                 y=random.uniform(y, y + height),
                 vx=random.gauss(0, 0.03),

@@ -1,6 +1,9 @@
 import math
 
-if __name__ == "__main__":
+
+def main():
+    # pylint: disable=import-outside-toplevel
+
     import pygame
     import pygame.gfxdraw
 
@@ -14,28 +17,12 @@ if __name__ == "__main__":
     import game_time
     import game_objects
     import graphics
-    from graphics import Text
     from heart_display import HeartDisplay
     import inputs
     import physics
     from player import Player
     from spaceship import make_spaceship
     from transform import Transform
-
-    class AsteroidCounter:
-        """A graphical counter that keeps track of the number of asteroids
-        that got destroyed.
-
-        """
-
-        def __init__(self, text: Text):
-            self._count = 0
-            self._text = text
-            self._text.text = str(self._count)
-
-        def increment(self):
-            self._count += 1
-            self._text.text = str(self._count)
 
     def add_border(
         border_x: float,
@@ -72,17 +59,6 @@ if __name__ == "__main__":
         add_border(
             border_x=400, border_y=590, outward_x=0, outward_y=1, radius=5000
         )
-
-    counter_transform = Transform()
-    counter_transform.set_local_x(400)
-    counter_transform.set_local_y(20)
-    counter_text = graphics.new_text(
-        game_object=game_objects.new_object(),
-        transform=counter_transform,
-        font=pygame.font.Font(None, 36),
-        text="",
-    )
-    counter = AsteroidCounter(counter_text)
 
     fps_transform = Transform()
     fps_transform.set_local_x(700)
@@ -121,7 +97,6 @@ if __name__ == "__main__":
     )
 
     make_asteroid_generator(
-        counter=counter,
         x=0,
         y=0,
         width=800,
@@ -154,3 +129,7 @@ if __name__ == "__main__":
 
         graphics.render(screen)
         pygame.display.update()
+
+
+if __name__ == "__main__":
+    main()

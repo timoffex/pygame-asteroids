@@ -53,6 +53,7 @@ class AmmoDisplay:
         )
 
     def destroy(self):
+        """Removes the display from the game."""
         if self._is_destroyed:
             return
 

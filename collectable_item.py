@@ -42,6 +42,7 @@ def make_collectable_item(
     When a player enters the collectable item, the
     ``player_collect`` function is called and the item is
     destroyed.
+
     """
 
     game_object = game_objects.new_object()
