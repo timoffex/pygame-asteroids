@@ -1,31 +1,29 @@
 """This module defines a factory to spawn collectable ammo drops."""
 
+import pygame
+
 from collectable_item import make_collectable_item
 from player import Player
 
 
-class ExtraBulletFactory:
-    """A factory that spawns collectable containers of extra ammo."""
+_extra_bullets_image = pygame.image.load(
+    "images/bullet_drop.png"
+).convert_alpha()
 
-    # pylint: disable=too-few-public-methods
-    # This has to be a class to be injectable with Pinject.
 
-    def __init__(self, provide_extra_bullets_image):
-        self._provide_extra_bullets_image = provide_extra_bullets_image
+def make_ammo_container(x: float, y: float, amount: int):
+    """Spawns a bullet container at (x, y) with the given number of
+    bullets.
 
-    def __call__(self, x: float, y: float, amount: int):
-        """Spawns a bullet container at (x, y) with the given number of
-        bullets.
+    """
 
-        """
+    def player_collect(player: Player):
+        player.bullets += amount
 
-        def player_collect(player: Player):
-            player.bullets += amount
-
-        make_collectable_item(
-            x=x,
-            y=y,
-            image=self._provide_extra_bullets_image(),
-            trigger_radius=16,
-            player_collect=player_collect,
-        )
+    make_collectable_item(
+        x=x,
+        y=y,
+        image=_extra_bullets_image,
+        trigger_radius=16,
+        player_collect=player_collect,
+    )

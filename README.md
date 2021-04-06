@@ -1,3 +1,5 @@
+TODO: This README is out-of-date.
+
 A small game written in pygame 2. I use Python 3.9 as the interpreter.
 
 This depends on the `pinject` and `pygame` packages.

@@ -1,10 +1,8 @@
 import math
 import random
 
-import pinject
 import pygame
 
-import game_time
 import game_objects
 from game_objects import GameObject
 import graphics
@@ -19,70 +17,141 @@ from player import Player
 from utils import first_where
 
 
-class BulletFactory:
-    def __init__(self, provide_bullet_images):
-        self._provide_bullet_images = provide_bullet_images
+def make_spaceship(
+    player: Player,
+    x: float = 0,
+    y: float = 0,
+) -> GameObject:
+    go = game_objects.new_object()
 
-    def __call__(
-        self,
-        *,
-        x: float,
-        y: float,
-        angle: float,
-        vx: float = 0,
-        vy: float = 0,
-        lifetime_ms: float = 10000
-    ) -> GameObject:
-        go = game_objects.new_object()
+    img_idle = pygame.transform.scale(
+        pygame.image.load("images/spaceship_idle.png").convert_alpha(),
+        (50, 50),
+    )
+    img_moving = pygame.transform.scale(
+        pygame.image.load("images/spaceship_moving.png").convert_alpha(),
+        (50, 50),
+    )
 
-        img = random.choice(self._provide_bullet_images())
+    transform = Transform()
+    transform.set_local_x(x)
+    transform.set_local_y(y)
 
-        transform = Transform()
-        transform.set_local_x(x)
-        transform.set_local_y(y)
-        transform.set_local_angle(angle)
+    sprite = graphics.new_sprite(go, img_idle, transform)
+    is_idle_sprite = True
 
-        graphics.new_sprite(go, img, transform)
+    body = physics.new_body(game_object=go, transform=transform, mass=1)
+    body.add_circle_collider(radius=25)
 
-        body = physics.new_body(game_object=go, transform=transform, mass=0.8)
-        body.add_circle_collider(radius=7.5)
+    body.add_data(player)
 
-        speed = 0.1
-        body.velocity_x = vx + speed * math.cos(angle)
-        body.velocity_y = vy - speed * math.sin(angle)
+    guns_transform = Transform(parent=transform)
+    guns_transform.set_local_x(40)
+    guns = _Guns(
+        player=player,
+        shooting_transform=guns_transform,
+        shooting_body=body,
+        firing_delay_ms=100,
+    )
 
-        def on_collision(collision: Collision):
-            hittable: Hittable
-            hittable = first_where(
-                lambda x: isinstance(x, Hittable),
-                collision.body_other.get_data(),
-            )
+    def update(delta_time: float) -> None:
+        nonlocal sprite, is_idle_sprite
 
-            if hittable:
-                hittable.hit()
-                go.destroy()
+        if inputs.is_key_down(pygame.K_d):
+            transform.rotate(-delta_time / 100)
+        if inputs.is_key_down(pygame.K_a):
+            transform.rotate(delta_time / 100)
 
-        body.add_collision_hook(on_collision)
+        if inputs.is_key_down(pygame.K_s):
+            # Slow down gradually
+            body.velocity_x *= math.pow(0.8, delta_time / 50)
+            body.velocity_y *= math.pow(0.8, delta_time / 50)
 
-        def destroy_after_lifetime():
-            yield resume_after(delay_ms=lifetime_ms)
+        if inputs.is_key_down(pygame.K_w):
+            # Speed up in the direction the ship is facing
+
+            s = math.sin(transform.angle)
+            c = math.cos(transform.angle)
+            body.velocity_x += delta_time * c / 1000
+            body.velocity_y -= delta_time * s / 1000
+
+            if is_idle_sprite:
+                sprite.destroy()
+                sprite = graphics.new_sprite(go, img_moving, transform)
+                is_idle_sprite = False
+        else:
+            if not is_idle_sprite:
+                sprite.destroy()
+                sprite = graphics.new_sprite(go, img_idle, transform)
+                is_idle_sprite = True
+
+        if inputs.is_key_down(pygame.K_SPACE) and guns.is_ready_to_fire():
+            guns.fire()
+
+    go.on_update(update)
+    return go
+
+
+_bullet_images = [pygame.image.load("images/bullet.png").convert_alpha()]
+
+
+def _make_bullet(
+    *,
+    x: float,
+    y: float,
+    angle: float,
+    vx: float = 0,
+    vy: float = 0,
+    lifetime_ms: float = 10000
+) -> GameObject:
+    go = game_objects.new_object()
+
+    img = random.choice(_bullet_images)
+
+    transform = Transform()
+    transform.set_local_x(x)
+    transform.set_local_y(y)
+    transform.set_local_angle(angle)
+
+    graphics.new_sprite(go, img, transform)
+
+    body = physics.new_body(game_object=go, transform=transform, mass=0.8)
+    body.add_circle_collider(radius=7.5)
+
+    speed = 0.1
+    body.velocity_x = vx + speed * math.cos(angle)
+    body.velocity_y = vy - speed * math.sin(angle)
+
+    def on_collision(collision: Collision):
+        hittable: Hittable
+        hittable = first_where(
+            lambda x: isinstance(x, Hittable),
+            collision.body_other.get_data(),
+        )
+
+        if hittable:
+            hittable.hit()
             go.destroy()
 
-        GameObjectCoroutine(go, destroy_after_lifetime()).start()
+    body.add_collision_hook(on_collision)
 
-        return go
+    def destroy_after_lifetime():
+        yield resume_after(delay_ms=lifetime_ms)
+        go.destroy()
+
+    GameObjectCoroutine(go, destroy_after_lifetime()).start()
+
+    return go
 
 
-class Guns:
+class _Guns:
     def __init__(
         self,
-        bullet_factory: BulletFactory,
         shooting_transform: Transform,
         shooting_body: PhysicsBody,
         firing_delay_ms: float,
         player: Player,
     ):
-        self._bullet_factory = bullet_factory
         self._shooting_transform = shooting_transform
         self._shooting_body = shooting_body
         self._last_shot_time = -math.inf
@@ -101,7 +170,7 @@ class Guns:
 
         if self._player.bullets > 0:
             self._player.bullets -= 1
-            self._bullet_factory(
+            _make_bullet(
                 x=self._shooting_transform.x,
                 y=self._shooting_transform.y,
                 angle=self._shooting_transform.angle,
@@ -109,104 +178,3 @@ class Guns:
                 vy=self._shooting_body.velocity_y,
                 lifetime_ms=30000,
             )
-
-
-class GunsFactory:
-    @pinject.copy_args_to_internal_fields
-    def __init__(self, bullet_factory: BulletFactory):
-        pass
-
-    def __call__(
-        self,
-        shooting_transform: Transform,
-        shooting_body: PhysicsBody,
-        firing_delay_ms: float,
-        player: Player,
-    ) -> Guns:
-        return Guns(
-            bullet_factory=self._bullet_factory,
-            shooting_transform=shooting_transform,
-            shooting_body=shooting_body,
-            firing_delay_ms=firing_delay_ms,
-            player=player,
-        )
-
-
-class SpaceshipFactory:
-    def __init__(self, guns_factory: GunsFactory):
-        self._guns_factory = guns_factory
-
-    def __call__(
-        self,
-        player: Player,
-        x: float = 0,
-        y: float = 0,
-    ) -> GameObject:
-        go = game_objects.new_object()
-
-        img_idle = pygame.transform.scale(
-            pygame.image.load("images/spaceship_idle.png").convert_alpha(),
-            (50, 50),
-        )
-        img_moving = pygame.transform.scale(
-            pygame.image.load("images/spaceship_moving.png").convert_alpha(),
-            (50, 50),
-        )
-
-        transform = Transform()
-        transform.set_local_x(x)
-        transform.set_local_y(y)
-
-        sprite = graphics.new_sprite(go, img_idle, transform)
-        is_idle_sprite = True
-
-        body = physics.new_body(game_object=go, transform=transform, mass=1)
-        body.add_circle_collider(radius=25)
-
-        body.add_data(player)
-
-        guns_transform = Transform(parent=transform)
-        guns_transform.set_local_x(40)
-        guns = self._guns_factory(
-            player=player,
-            shooting_transform=guns_transform,
-            shooting_body=body,
-            firing_delay_ms=100,
-        )
-
-        def update(delta_time: float) -> None:
-            nonlocal sprite, is_idle_sprite
-
-            if inputs.is_key_down(pygame.K_d):
-                transform.rotate(-delta_time / 100)
-            if inputs.is_key_down(pygame.K_a):
-                transform.rotate(delta_time / 100)
-
-            if inputs.is_key_down(pygame.K_s):
-                # Slow down gradually
-                body.velocity_x *= math.pow(0.8, delta_time / 50)
-                body.velocity_y *= math.pow(0.8, delta_time / 50)
-
-            if inputs.is_key_down(pygame.K_w):
-                # Speed up in the direction the ship is facing
-
-                s = math.sin(transform.angle)
-                c = math.cos(transform.angle)
-                body.velocity_x += delta_time * c / 1000
-                body.velocity_y -= delta_time * s / 1000
-
-                if is_idle_sprite:
-                    sprite.destroy()
-                    sprite = graphics.new_sprite(go, img_moving, transform)
-                    is_idle_sprite = False
-            else:
-                if not is_idle_sprite:
-                    sprite.destroy()
-                    sprite = graphics.new_sprite(go, img_idle, transform)
-                    is_idle_sprite = True
-
-            if inputs.is_key_down(pygame.K_SPACE) and guns.is_ready_to_fire():
-                guns.fire()
-
-        go.on_update(update)
-        return go

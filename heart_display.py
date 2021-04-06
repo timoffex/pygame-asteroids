@@ -1,4 +1,3 @@
-import pinject
 import pygame
 
 import game_objects
@@ -10,18 +9,19 @@ from player import Player
 from transform import Transform
 
 
+_heart_image = pygame.image.load("images/heart.png").convert_alpha()
+
+
 class HeartDisplay:
     def __init__(
         self,
         player: Player,
         transform: Transform,
         game_object: GameObject,
-        heart_image: pygame.Surface,
     ):
         self._player = player
         self._transform = transform
         self._game_object = game_object
-        self._heart_image = heart_image
 
         self._is_destroyed = False
         self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
@@ -57,24 +57,8 @@ class HeartDisplay:
 
         graphics.new_sprite(
             game_object=heart_object,
-            surface=self._heart_image,
+            surface=_heart_image,
             transform=heart_transform,
         )
 
         return heart_object
-
-
-class HeartDisplayFactory:
-    @pinject.copy_args_to_internal_fields
-    def __init__(self, provide_heart_image):
-        pass
-
-    def __call__(
-        self, game_object: GameObject, transform: Transform, player: Player
-    ):
-        return HeartDisplay(
-            player=player,
-            transform=transform,
-            game_object=game_object,
-            heart_image=self._provide_heart_image(),
-        )
