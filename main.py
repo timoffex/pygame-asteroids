@@ -2,8 +2,6 @@ import math
 
 
 def main():
-    # pylint: disable=import-outside-toplevel
-
     import pygame
     import pygame.gfxdraw
 
@@ -23,42 +21,6 @@ def main():
     from player import Player
     from spaceship import make_spaceship
     from transform import Transform
-
-    def add_border(
-        border_x: float,
-        border_y: float,
-        outward_x: float,
-        outward_y: float,
-        radius: float,
-    ):
-        t = Transform()
-        t.set_local_x(border_x + outward_x * radius)
-        t.set_local_y(border_y + outward_y * radius)
-
-        body = physics.new_body(
-            game_object=game_objects.new_object(),
-            mass=math.inf,
-            transform=t,
-        )
-        body.add_circle_collider(radius=radius)
-
-    def make_borders():
-        """Creates the boundaries of the map by using very large invisible
-        circles.
-
-        """
-        add_border(
-            border_x=790, border_y=300, outward_x=1, outward_y=0, radius=5000
-        )
-        add_border(
-            border_x=10, border_y=300, outward_x=-1, outward_y=0, radius=5000
-        )
-        add_border(
-            border_x=400, border_y=10, outward_x=0, outward_y=-1, radius=5000
-        )
-        add_border(
-            border_x=400, border_y=590, outward_x=0, outward_y=1, radius=5000
-        )
 
     fps_transform = Transform()
     fps_transform.set_local_x(700)
@@ -104,7 +66,7 @@ def main():
         interval_ms=3000,
     )
 
-    make_borders()
+    _make_borders()
 
     last_ticks = pygame.time.get_ticks()
     while True:
@@ -129,6 +91,48 @@ def main():
 
         graphics.render(screen)
         pygame.display.update()
+
+
+def _add_border(
+    border_x: float,
+    border_y: float,
+    outward_x: float,
+    outward_y: float,
+    radius: float,
+):
+    import game_objects
+    import physics
+    from transform import Transform
+
+    t = Transform()
+    t.set_local_x(border_x + outward_x * radius)
+    t.set_local_y(border_y + outward_y * radius)
+
+    body = physics.new_body(
+        game_object=game_objects.new_object(),
+        mass=math.inf,
+        transform=t,
+    )
+    body.add_circle_collider(radius=radius)
+
+
+def _make_borders():
+    """Creates the boundaries of the map by using very large invisible
+    circles.
+
+    """
+    _add_border(
+        border_x=790, border_y=300, outward_x=1, outward_y=0, radius=5000
+    )
+    _add_border(
+        border_x=10, border_y=300, outward_x=-1, outward_y=0, radius=5000
+    )
+    _add_border(
+        border_x=400, border_y=10, outward_x=0, outward_y=-1, radius=5000
+    )
+    _add_border(
+        border_x=400, border_y=590, outward_x=0, outward_y=1, radius=5000
+    )
 
 
 if __name__ == "__main__":
