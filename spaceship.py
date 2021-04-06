@@ -4,15 +4,14 @@ import random
 import pinject
 import pygame
 
+import game_time
 import game_objects
 from game_objects import GameObject
-
 import graphics
+import inputs
 
 from game_object_coroutine import GameObjectCoroutine, resume_after
-from game_time import GameTime
 from hittable import Hittable
-from inputs import Inputs
 from transform import Transform
 from physics import PhysicsSystem, PhysicsBody, Collision
 from player import Player
@@ -22,11 +21,9 @@ from utils import first_where
 class BulletFactory:
     def __init__(
         self,
-        game_time: GameTime,
         physics_system: PhysicsSystem,
         provide_bullet_images,
     ):
-        self._game_time = game_time
         self._physics_system = physics_system
         self._provide_bullet_images = provide_bullet_images
 
@@ -74,7 +71,7 @@ class BulletFactory:
         body.add_collision_hook(on_collision)
 
         def destroy_after_lifetime():
-            yield resume_after(self._game_time, delay_ms=lifetime_ms)
+            yield resume_after(delay_ms=lifetime_ms)
             go.destroy()
 
         GameObjectCoroutine(go, destroy_after_lifetime()).start()
@@ -144,11 +141,9 @@ class GunsFactory:
 class SpaceshipFactory:
     def __init__(
         self,
-        inputs: Inputs,
         physics_system: PhysicsSystem,
         guns_factory: GunsFactory,
     ):
-        self._inputs = inputs
         self._physics_system = physics_system
         self._guns_factory = guns_factory
         pass
@@ -196,17 +191,17 @@ class SpaceshipFactory:
         def update(delta_time: float) -> None:
             nonlocal sprite, is_idle_sprite
 
-            if self._inputs.is_key_down(pygame.K_d):
+            if inputs.is_key_down(pygame.K_d):
                 transform.rotate(-delta_time / 100)
-            if self._inputs.is_key_down(pygame.K_a):
+            if inputs.is_key_down(pygame.K_a):
                 transform.rotate(delta_time / 100)
 
-            if self._inputs.is_key_down(pygame.K_s):
+            if inputs.is_key_down(pygame.K_s):
                 # Slow down gradually
                 body.velocity_x *= math.pow(0.8, delta_time / 50)
                 body.velocity_y *= math.pow(0.8, delta_time / 50)
 
-            if self._inputs.is_key_down(pygame.K_w):
+            if inputs.is_key_down(pygame.K_w):
                 # Speed up in the direction the ship is facing
 
                 s = math.sin(transform.angle)
@@ -224,10 +219,7 @@ class SpaceshipFactory:
                     sprite = graphics.new_sprite(go, img_idle, transform)
                     is_idle_sprite = True
 
-            if (
-                self._inputs.is_key_down(pygame.K_SPACE)
-                and guns.is_ready_to_fire()
-            ):
+            if inputs.is_key_down(pygame.K_SPACE) and guns.is_ready_to_fire():
                 guns.fire()
 
         go.on_update(update)

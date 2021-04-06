@@ -1,6 +1,7 @@
-from game_objects import GameObject
-from game_time import GameTime
 from typing import Callable, Generator, Optional
+
+import game_time
+from game_objects import GameObject
 
 GameCoroutineGenerator = Generator[
     Optional["GameYieldInstruction"], float, None
@@ -130,14 +131,14 @@ class GameYieldInstruction:
         ...
 
 
-def resume_after(time: GameTime, delay_ms: float) -> GameYieldInstruction:
+def resume_after(delay_ms: float) -> GameYieldInstruction:
     """Returns a GameYieldInstruction that stops the coroutine from
     updating until a certain amount of time has passed.
 
     """
 
     def continuation(resume):
-        time.run_after_delay(delay_ms=delay_ms, callback=resume)
+        game_time.run_after_delay(delay_ms=delay_ms, callback=resume)
 
     return resume_later(continuation)
 

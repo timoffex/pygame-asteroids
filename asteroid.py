@@ -10,12 +10,12 @@ import pygame
 import game_objects
 from game_objects import GameObject
 
+import game_time
 import graphics
 
 from extra_bullets import ExtraBulletFactory
 from extra_heart import ExtraHeartFactory
 from game_object_coroutine import GameObjectCoroutine, resume_after
-from game_time import GameTime
 from hittable import Hittable
 from physics import PhysicsSystem, Collision
 from player import Player
@@ -133,12 +133,7 @@ class AsteroidGeneratorFactory:
 
     # pylint: disable=too-few-public-methods
 
-    def __init__(
-        self,
-        game_time: GameTime,
-        asteroid_factory: AsteroidFactory,
-    ):
-        self._time = game_time
+    def __init__(self, asteroid_factory: AsteroidFactory):
         self._asteroid_factory = asteroid_factory
 
     def __call__(
@@ -162,7 +157,7 @@ class AsteroidGeneratorFactory:
                     vx=random.gauss(0, 0.03),
                     vy=random.gauss(0, 0.03),
                 )
-                yield resume_after(time=self._time, delay_ms=interval_ms)
+                yield resume_after(delay_ms=interval_ms)
 
         GameObjectCoroutine(game_object, generate_asteroids()).start()
 
@@ -173,11 +168,7 @@ class _ExplosionFactory:
 
     # pylint: disable=too-few-public-methods
 
-    def __init__(
-        self,
-        game_time: GameTime,
-        provide_explosion_images,
-    ):
+    def __init__(self, provide_explosion_images):
         self._game_time = game_time
         self._provide_explosion_images = provide_explosion_images
 
@@ -194,7 +185,7 @@ class _ExplosionFactory:
                 sprite = graphics.new_sprite(
                     game_object, explosion_images[i], transform
                 )
-                yield resume_after(self._game_time, delay_ms=20)
+                yield resume_after(delay_ms=20)
                 sprite.destroy()
             game_object.destroy()
 

@@ -3,17 +3,16 @@ import pinject
 import pygame
 import pygame.gfxdraw
 
+import game_time
 import game_objects
 from game_objects import GameObject
-
 import graphics
 from graphics import Text
+import inputs
 
 from ammo_display import AmmoDisplay
 from asteroid import AsteroidGeneratorFactory
-from game_time import GameTime
 from heart_display import HeartDisplayFactory
-from inputs import Inputs
 from physics import PhysicsSystem
 from player import Player
 from spaceship import SpaceshipFactory
@@ -75,15 +74,11 @@ class ApplicationBindingSpec(pinject.BindingSpec):
 class Application:
     def __init__(
         self,
-        inputs: Inputs,
-        game_time: GameTime,
         physics_system: PhysicsSystem,
         asteroid_generator_factory: AsteroidGeneratorFactory,
         spaceship_factory: SpaceshipFactory,
         heart_display_factory: HeartDisplayFactory,
     ):
-        self._inputs = inputs
-        self._game_time = game_time
         self._physics_system = physics_system
         self._asteroid_generator_factory = asteroid_generator_factory
         self._spaceship_factory = spaceship_factory
@@ -200,13 +195,13 @@ class Application:
             fps_text.text = "fps: " + str(round(1000 / delta_time))
             last_ticks = new_ticks
 
-            self._inputs.start_new_frame()
+            inputs.start_new_frame()
 
-            if self._inputs.did_quit():
+            if inputs.did_quit():
                 break
 
             game_objects.update(delta_time)
-            self._game_time.run_callbacks()
+            game_time.run_callbacks()
             self._physics_system.update(delta_time)
 
             # Clear the screen
