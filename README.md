@@ -1,8 +1,4 @@
-TODO: This README is out-of-date.
-
 A small game written in pygame 2. I use Python 3.9 as the interpreter.
-
-This depends on the `pinject` and `pygame` packages.
 
 The entry point is `main.py` (that is, run the game with the command
 `python3.9 main.py`). Controls are: W to accelerate, A and D to turn,
@@ -10,12 +6,69 @@ S to slow down, Space to shoot.
 
 # (Programming) Concepts
 
+## Singletons are singletons
+
+This project went through three different phases in terms of
+dependency injection:
+
+1. Pass shared dependencies around manually through function and
+   constructor arguments.
+2. Use [Pinject](https://github.com/google/pinject) to construct the
+   object graph.
+3. Use modules as singleton objects. (current)
+
+After using a DI framework (Google's Pinject) for a while, I ended up
+having a lot of code like this:
+
+```
+class AsteroidFactory:
+    def __init__(
+        self,
+        game_object_system: GameObjectSystem,
+        physics_system: PhysicsSystem,
+        rendering_system: RenderingSystem,
+        explosion_factory: ExplosionFactory,
+        provide_asteroid_images,
+        extra_heart_factory: ExtraHeartFactory,
+        extra_bullet_factory: ExtraBulletFactory,
+    ):
+        self._game_object_system = game_object_system
+        ...
+
+     def __call__(
+        self,
+        counter,
+        *,
+        x: float = 400,
+        y: float = 300,
+        vx: float = 0,
+        vy: float = 0
+    ) -> GameObject:
+        ...
+        
+    # No other methods
+```
+
+This felt too verbose for Python, but I justified it with the usual
+argument for using DI instead of global state: it's hard to stub
+global state, so it makes unit tests more fragile and difficult to
+write. I wasn't planning on adding unit tests, but I wanted to "do
+things right", so I used Pinject. I was a little miffed at `pygame`
+using global state and considered writing a nice class to wrap it.
+
+Until I realized that I can stub out modules in Python.
+
+Now everything else is just silly. Physics and graphics are singletons
+in my game; I'm not trying to write general-purpose libraries here.
+Why pass them as arguments? That's just boilerplate. Python modules
+are singletons! It's perfect!
+
 ## Transform
 
 The `Transform` is a mutable object that represents a translation and
 a rotation. It is meant to be shared by different pieces of code; for
 example, the physics system modifies the transform by applying
-velocities and the rendering system applies the transform when
+velocities and the graphics system applies the transform when
 rendering sprites.
 
 I model this roughly on Unity's Transform component, except:
@@ -52,13 +105,7 @@ only reason to create a child `GameObject` is when
 
 ## Graphics
 
-The graphics system is in `rendering.py`. There is a `RenderingSystem`
-class which can be used to create `Sprite` objects.
-
-`RenderingSystem` keeps track of all graphical objects and would be
-responsible for rendering them efficiently (if there were more complex
-graphics). It is meant to be a singleton that is created at startup
-and that stays alive until the app shuts down.
+The graphics system is defined in `graphics.py`
 
 There are two types of graphical objects: `Sprite` and `Text`.
 `Sprite` is used to display an image, and `Text` is used to display
@@ -67,7 +114,7 @@ text in a given font. All graphical objects are attached to a
 destroyed) and are positioned according to a `Transform`.
 
 `Sprite` and `Text` should be created by calling the `new_sprite` and
-`new_text` methods on a `RenderingSystem` object.
+`new_text` methods on the `graphics` module.
 
 ## Physics
 
@@ -77,69 +124,18 @@ trigger colliders like in Unity. The physics engine doesn't support
 angular momentum, friction, inelastic collisions or other collider
 shapes yet, but the design of the code doesn't preclude this.
 
-The `PhysicsSystem` is a singleton object that manages everything
-related to collisions, triggers, and physics-based motion.
-
 A `PhysicsBody` represents an object that participates in the physics
 simulation (in a specific `PhysicsSystem`). `PhysicsBody`s are created
-using the `PhysicsSystem.new_body` method. Use the
-`add_circle_collider` method to specify a collider on the body so that
-it can bounce off of other bodies. Colliders attached to a
-`PhysicsBody` are of type `RegularCollider`.
+using the `physics.new_body` method. Use the `add_circle_collider`
+method to specify a collider on the body so that it can bounce off of
+other bodies. Colliders attached to a `PhysicsBody` are of type
+`RegularCollider`.
 
 A `TriggerCollider` is a region of space that detects when any other
 kind of collider (`TriggerCollider` or `RegularCollider`) enters it.
-These are created using methods on a `PhysicsSystem` object such as
-`new_circle_trigger`.
+The only trigger collider right now can be created using the
+`physics.new_circle_trigger` method.
 
 All physics objects are attached to a `GameObject` and positioned
 according to a `Transform`. The physics system modifies a
 `PhysicsBody`'s transform to move the body by its velocity.
-
-## Pinject dependency injection
-
-I use [Pinject](https://github.com/google/pinject) for dependency
-injection.
-
-The purpose of dependency injection (passing stuff through function
-arguments) is to separate concerns. For example, the
-`AsteroidGeneratorFactory` injects an `AsteroidFactory` and so doesn't
-need to know the details of how to make an asteroid. I can redefine
-how asteroids work without changing the asteroid spawner code, and I
-can modify the spawner code without changing how asteroids work.
-
-If you do dependency injection by manually passing function arguments,
-you still have to construct all of the dependencies in the correct
-order at the top level of your program. So while
-`AsteroidGeneratorFactory` doesn't need to know how to make an
-`AsteroidFactory`, `main.py` has to know how to make both:
-
-```py
-game_object_system = GameObjectSystem()
-physics_system = PhysicsSystem()
-rendering_system = RenderingSystem()
-game_time = GameTime()
-explosion_factory = ExplosionFactory(...)
-
-asteroid_factory = AsteroidFactory(
-    game_object_system=game_object_system,
-    physics_system=physics_system,
-    rendering_system=rendering_system,
-    explosion_factory=explosion_factory,
-)
-asteroid_generator_factory = AsteroidGeneratorFactory(
-    game_object_system=game_object_system,
-    game_time=game_time,
-    asteroid_factory=asteroid_factory
-)
-```
-
-Clearly this is all boilerplate. All constructor arguments are in the
-form `name=name` because all dependencies are named after their class
-by convention. Worse: whenever any class gains a new dependency, I
-have to touch `main.py` and might even have to rearrange the order in
-which I make the objects! For example, if `game_object_system` started
-to rely on `GameTime`, I would have to shuffle around those two lines
-of code.
-
-Pinject automates away this boilerplate.
