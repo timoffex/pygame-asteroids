@@ -1,4 +1,3 @@
-import pinject
 import pygame
 
 from game_objects import GameObject
@@ -63,17 +62,3 @@ class AmmoDisplay:
 
     def _update_amount(self, new_ammo_amount: int):
         self._text.text = str(new_ammo_amount)
-
-
-class AmmoDisplayFactory:
-    def __call__(
-        self,
-        player: Player,
-        transform: Transform,
-        game_object: GameObject,
-    ) -> AmmoDisplay:
-        return AmmoDisplay(
-            player=player,
-            transform=transform,
-            game_object=game_object,
-        )

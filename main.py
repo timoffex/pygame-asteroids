@@ -9,7 +9,7 @@ from game_objects import GameObject
 import graphics
 from graphics import Text
 
-from ammo_display import AmmoDisplayFactory
+from ammo_display import AmmoDisplay
 from asteroid import AsteroidGeneratorFactory
 from game_time import GameTime
 from heart_display import HeartDisplayFactory
@@ -81,7 +81,6 @@ class Application:
         asteroid_generator_factory: AsteroidGeneratorFactory,
         spaceship_factory: SpaceshipFactory,
         heart_display_factory: HeartDisplayFactory,
-        ammo_display_factory: AmmoDisplayFactory,
     ):
         self._inputs = inputs
         self._game_time = game_time
@@ -89,7 +88,6 @@ class Application:
         self._asteroid_generator_factory = asteroid_generator_factory
         self._spaceship_factory = spaceship_factory
         self._heart_display_factory = heart_display_factory
-        self._ammo_display_factory = ammo_display_factory
 
     def add_border(
         self,
@@ -176,7 +174,7 @@ class Application:
         ammo_display_transform = Transform()
         ammo_display_transform.set_local_x(20)
         ammo_display_transform.set_local_y(50)
-        self._ammo_display_factory(
+        AmmoDisplay(
             game_object=game_objects.new_object(),
             player=player,
             transform=ammo_display_transform,
