@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import math
+from typing import Any, Protocol
+
 from game_objects import GameObject
 from transform import Transform
-from typing import Any, Protocol
 
 from .collider import Collider
 
@@ -59,6 +61,10 @@ class PhysicsBody(ABC):
         self._remove_destroy_hook = self._game_object.on_destroy(self.destroy)
         self._is_destroyed = False
         self._colliders: set["RegularCollider"] = set()
+
+    @property
+    def speed(self):
+        return math.sqrt(self.velocity_x ** 2 + self.velocity_y ** 2)
 
     def destroy(self):
         """Removes this physics body from the simulation."""

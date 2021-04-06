@@ -3,18 +3,16 @@ import random
 
 import pygame
 
+from bullet import Bullet
 import game_objects
 from game_objects import GameObject
 import graphics
 import inputs
 import physics
-from physics import PhysicsBody, Collision
+from physics import PhysicsBody
 
-from game_object_coroutine import GameObjectCoroutine, resume_after
-from hittable import Hittable
 from transform import Transform
 from player import Player
-from utils import first_where
 
 
 def make_spaceship(
@@ -92,58 +90,6 @@ def make_spaceship(
     return go
 
 
-_bullet_images = [pygame.image.load("images/bullet.png").convert_alpha()]
-
-
-def _make_bullet(
-    *,
-    x: float,
-    y: float,
-    angle: float,
-    vx: float = 0,
-    vy: float = 0,
-    lifetime_ms: float = 10000
-) -> GameObject:
-    go = game_objects.new_object()
-
-    img = random.choice(_bullet_images)
-
-    transform = Transform()
-    transform.set_local_x(x)
-    transform.set_local_y(y)
-    transform.set_local_angle(angle)
-
-    graphics.new_sprite(go, img, transform)
-
-    body = physics.new_body(game_object=go, transform=transform, mass=0.8)
-    body.add_circle_collider(radius=7.5)
-
-    speed = 0.1
-    body.velocity_x = vx + speed * math.cos(angle)
-    body.velocity_y = vy - speed * math.sin(angle)
-
-    def on_collision(collision: Collision):
-        hittable: Hittable
-        hittable = first_where(
-            lambda x: isinstance(x, Hittable),
-            collision.body_other.get_data(),
-        )
-
-        if hittable:
-            hittable.hit()
-            go.destroy()
-
-    body.add_collision_hook(on_collision)
-
-    def destroy_after_lifetime():
-        yield resume_after(delay_ms=lifetime_ms)
-        go.destroy()
-
-    GameObjectCoroutine(go, destroy_after_lifetime()).start()
-
-    return go
-
-
 class _Guns:
     def __init__(
         self,
@@ -170,11 +116,16 @@ class _Guns:
 
         if self._player.bullets > 0:
             self._player.bullets -= 1
-            _make_bullet(
+            bullet = Bullet(
                 x=self._shooting_transform.x,
                 y=self._shooting_transform.y,
                 angle=self._shooting_transform.angle,
-                vx=self._shooting_body.velocity_x,
-                vy=self._shooting_body.velocity_y,
+                speed=self._shooting_body.speed + 0.1,
                 lifetime_ms=30000,
             )
+
+            if random.uniform(0, 1) < 0.05:
+                bullet.superpower(
+                    angle=self._shooting_transform.angle,
+                    speed=self._shooting_body.speed + 0.5,
+                )

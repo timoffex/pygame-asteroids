@@ -69,11 +69,11 @@ def make_asteroid(
             self._num_hits = 0
             self._is_destroyed = False
 
-        def hit(self):
+        def hit(self, hitpoints: float):
             if self._is_destroyed:
                 return
 
-            self._num_hits += 1
+            self._num_hits += hitpoints
 
             if self._num_hits >= 10:
                 self._is_destroyed = True
