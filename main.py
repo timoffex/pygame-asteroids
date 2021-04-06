@@ -6,6 +6,9 @@ import pygame.gfxdraw
 import game_objects
 from game_objects import GameObject
 
+import graphics
+from graphics import Text
+
 from ammo_display import AmmoDisplayFactory
 from asteroid import AsteroidGeneratorFactory
 from game_time import GameTime
@@ -13,7 +16,6 @@ from heart_display import HeartDisplayFactory
 from inputs import Inputs
 from physics import PhysicsSystem
 from player import Player
-from rendering import RenderingSystem, Text
 from spaceship import SpaceshipFactory
 from transform import Transform
 
@@ -75,7 +77,6 @@ class Application:
         self,
         inputs: Inputs,
         game_time: GameTime,
-        rendering_system: RenderingSystem,
         physics_system: PhysicsSystem,
         asteroid_generator_factory: AsteroidGeneratorFactory,
         spaceship_factory: SpaceshipFactory,
@@ -85,7 +86,6 @@ class Application:
         self._inputs = inputs
         self._game_time = game_time
         self._physics_system = physics_system
-        self._rendering_system = rendering_system
         self._asteroid_generator_factory = asteroid_generator_factory
         self._spaceship_factory = spaceship_factory
         self._heart_display_factory = heart_display_factory
@@ -136,7 +136,7 @@ class Application:
         counter_transform = Transform()
         counter_transform.set_local_x(400)
         counter_transform.set_local_y(20)
-        counter_text = self._rendering_system.new_text(
+        counter_text = graphics.new_text(
             game_object=game_objects.new_object(),
             transform=counter_transform,
             font=pygame.font.Font(None, 36),
@@ -147,7 +147,7 @@ class Application:
         fps_transform = Transform()
         fps_transform.set_local_x(700)
         fps_transform.set_local_y(30)
-        fps_text = self._rendering_system.new_text(
+        fps_text = graphics.new_text(
             game_object=game_objects.new_object(),
             transform=fps_transform,
             font=pygame.font.Font(None, 36),
@@ -227,7 +227,7 @@ class Application:
             #         pygame.Color(255, 0, 255),
             #     )
 
-            self._rendering_system.render(screen)
+            graphics.render(screen)
             pygame.display.update()
 
 

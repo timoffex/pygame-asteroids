@@ -4,21 +4,20 @@ import pygame
 import game_objects
 from game_objects import GameObject
 
+import graphics
+
 from player import Player
-from rendering import RenderingSystem
 from transform import Transform
 
 
 class HeartDisplay:
     def __init__(
         self,
-        rendering_system: RenderingSystem,
         player: Player,
         transform: Transform,
         game_object: GameObject,
         heart_image: pygame.Surface,
     ):
-        self._rendering_system = rendering_system
         self._player = player
         self._transform = transform
         self._game_object = game_object
@@ -56,7 +55,7 @@ class HeartDisplay:
         heart_transform = Transform(parent=self._transform)
         heart_transform.set_local_x(heart_idx * self._heart_x_offset)
 
-        self._rendering_system.new_sprite(
+        graphics.new_sprite(
             game_object=heart_object,
             surface=self._heart_image,
             transform=heart_transform,
@@ -67,14 +66,13 @@ class HeartDisplay:
 
 class HeartDisplayFactory:
     @pinject.copy_args_to_internal_fields
-    def __init__(self, rendering_system, provide_heart_image):
+    def __init__(self, provide_heart_image):
         pass
 
     def __call__(
         self, game_object: GameObject, transform: Transform, player: Player
     ):
         return HeartDisplay(
-            self._rendering_system,
             player=player,
             transform=transform,
             game_object=game_object,

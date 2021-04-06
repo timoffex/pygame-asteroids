@@ -1,8 +1,17 @@
-"""This module defines higher level graphics abstractions on top of pygame."""
+"""This module defines higher level graphics abstractions on top of pygame.
+
+The module should be imported using ``import graphics``, but types may be
+imported individually using ``from graphics import ...``. The following
+module-level functions are provided:
+
+  graphics.new_sprite(game_object, surface, transform)
+  graphics.new_text(game_object, transform, font, text)
+  graphics.render(screen)
+
+"""
 
 import math
 from abc import ABC, abstractmethod
-from typing import Callable
 
 import pygame
 
@@ -11,40 +20,32 @@ from transform import Transform
 
 
 class GraphicalObject(ABC):
-    """Any object created from a RenderingSystem."""
+    """Base class for all graphical objects."""
 
     # pylint: disable=too-few-public-methods
 
-    def __init__(
-        self,
-        game_object: GameObject,
-        remove_from_system: Callable[["GraphicalObject"], None],
-    ):
+    def __init__(self, game_object: GameObject):
         self.__game_object = game_object
-        self.__remove_from_system = remove_from_system
 
         self.__is_destroyed = False
         self.__remove_destroy_hook = game_object.on_destroy(self.destroy)
 
     def destroy(self):
-        """Removes this object from the rendering system causing it to no longer
-        be drawn.
-
-        """
+        """Removes this graphical object causing it to no longer be drawn."""
 
         if self.__is_destroyed:
             return
 
         self.__is_destroyed = True
-        self.__remove_from_system(self)
         self.__remove_destroy_hook()
+        _discard_graphical_object(self)
 
 
 class Sprite(GraphicalObject):
     """A 2D image attached to a GameObject that moves and rotates
     according to a Transform.
 
-    Create Sprites using RenderingSystem.new_sprite.
+    Create Sprites using ``new_sprite``.
     """
 
     @property
@@ -62,7 +63,7 @@ class Text(GraphicalObject):
     """A string of text that is rendered on the screen and can be positioned
     according to a Transform.
 
-    Create Texts using RenderingSystem.new_text.
+    Create Texts using ``new_text``.
     """
 
     @property
@@ -96,61 +97,51 @@ class Text(GraphicalObject):
         pass
 
 
-class RenderingSystem:
-    """A collection of graphical objects."""
+def new_sprite(
+    game_object: GameObject,
+    surface: pygame.Surface,
+    transform: Transform,
+) -> Sprite:
+    """Creates and returns a new Sprite."""
 
-    def __init__(self):
-        self._objects: set[_GraphicalObject] = set()
+    sprite = _Sprite(
+        game_object=game_object,
+        surface=surface,
+        transform=transform,
+    )
+    _graphical_objects.add(sprite)
+    return sprite
 
-    def new_sprite(
-        self,
-        game_object: GameObject,
-        surface: pygame.Surface,
-        transform: Transform,
-    ) -> Sprite:
-        """Creates and returns a new sprite that will be drawn whenever
-        this is rendered.
 
-        """
+def new_text(
+    game_object: GameObject,
+    transform: Transform,
+    font: pygame.font.Font,
+    text: str,
+):
+    """Creates and returns a Text object."""
 
-        sprite = _Sprite(
-            remove_from_system=self._discard,
-            game_object=game_object,
-            surface=surface,
-            transform=transform,
-        )
-        self._objects.add(sprite)
-        return sprite
+    text = _Text(
+        game_object=game_object,
+        transform=transform,
+        text=text,
+        font=font,
+    )
+    _graphical_objects.add(text)
+    return text
 
-    def new_text(
-        self,
-        game_object: GameObject,
-        transform: Transform,
-        font: pygame.font.Font,
-        text: str,
-    ):
-        """Creates and returns a Text object that will be drawn whenever
-        this is rendered.
 
-        """
+def render(screen: pygame.Surface):
+    """Renders all created graphical objects on the screen."""
+    for obj in _graphical_objects:
+        obj.render(screen)
 
-        text = _Text(
-            remove_from_system=self._discard,
-            game_object=game_object,
-            transform=transform,
-            text=text,
-            font=font,
-        )
-        self._objects.add(text)
-        return text
 
-    def render(self, screen: pygame.Surface):
-        """Renders all graphical objects in this system."""
-        for obj in self._objects:
-            obj.render(screen)
+def _discard_graphical_object(obj):
+    _graphical_objects.discard(obj)
 
-    def _discard(self, obj):
-        self._objects.discard(obj)
+
+_graphical_objects: set["_GraphicalObject"] = set()
 
 
 class _GraphicalObject(GraphicalObject):

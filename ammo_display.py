@@ -2,9 +2,9 @@ import pinject
 import pygame
 
 from game_objects import GameObject
+import graphics
 
 from player import Player
-from rendering import RenderingSystem
 from transform import Transform
 
 
@@ -12,12 +12,10 @@ class AmmoDisplay:
     def __init__(
         self,
         *,
-        rendering_system: RenderingSystem,
         player: Player,
         transform: Transform,
         game_object: GameObject,
     ):
-        self._rendering_system = rendering_system
         self._player = player
         self._transform = transform
         self._game_object = game_object
@@ -39,7 +37,7 @@ class AmmoDisplay:
         self._image_transform = Transform(parent=self._transform)
         self._image_transform.set_local_x(15)
         self._image_transform.set_local_y(10)
-        self._rendering_system.new_sprite(
+        graphics.new_sprite(
             game_object=self._game_object,
             transform=self._image_transform,
             surface=self._ammo_image,
@@ -48,7 +46,7 @@ class AmmoDisplay:
         # Ammo text
         self._text_transform = Transform(parent=self._transform)
         self._text_transform.set_local_x(50)
-        self._text = self._rendering_system.new_text(
+        self._text = graphics.new_text(
             game_object=self._game_object,
             transform=self._text_transform,
             font=pygame.font.Font(None, 36),
@@ -68,10 +66,6 @@ class AmmoDisplay:
 
 
 class AmmoDisplayFactory:
-    @pinject.copy_args_to_internal_fields
-    def __init__(self, rendering_system):
-        pass
-
     def __call__(
         self,
         player: Player,
@@ -79,7 +73,6 @@ class AmmoDisplayFactory:
         game_object: GameObject,
     ) -> AmmoDisplay:
         return AmmoDisplay(
-            rendering_system=self._rendering_system,
             player=player,
             transform=transform,
             game_object=game_object,

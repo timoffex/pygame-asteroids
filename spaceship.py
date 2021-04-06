@@ -7,6 +7,8 @@ import pygame
 import game_objects
 from game_objects import GameObject
 
+import graphics
+
 from game_object_coroutine import GameObjectCoroutine, resume_after
 from game_time import GameTime
 from hittable import Hittable
@@ -14,7 +16,6 @@ from inputs import Inputs
 from transform import Transform
 from physics import PhysicsSystem, PhysicsBody, Collision
 from player import Player
-from rendering import RenderingSystem
 from utils import first_where
 
 
@@ -23,12 +24,10 @@ class BulletFactory:
         self,
         game_time: GameTime,
         physics_system: PhysicsSystem,
-        rendering_system: RenderingSystem,
         provide_bullet_images,
     ):
         self._game_time = game_time
         self._physics_system = physics_system
-        self._rendering_system = rendering_system
         self._provide_bullet_images = provide_bullet_images
 
     def __call__(
@@ -50,7 +49,7 @@ class BulletFactory:
         transform.set_local_y(y)
         transform.set_local_angle(angle)
 
-        self._rendering_system.new_sprite(go, img, transform)
+        graphics.new_sprite(go, img, transform)
 
         body = self._physics_system.new_body(
             game_object=go, transform=transform, mass=0.8
@@ -146,12 +145,10 @@ class SpaceshipFactory:
     def __init__(
         self,
         inputs: Inputs,
-        rendering_system: RenderingSystem,
         physics_system: PhysicsSystem,
         guns_factory: GunsFactory,
     ):
         self._inputs = inputs
-        self._rendering_system = rendering_system
         self._physics_system = physics_system
         self._guns_factory = guns_factory
         pass
@@ -177,7 +174,7 @@ class SpaceshipFactory:
         transform.set_local_x(x)
         transform.set_local_y(y)
 
-        sprite = self._rendering_system.new_sprite(go, img_idle, transform)
+        sprite = graphics.new_sprite(go, img_idle, transform)
         is_idle_sprite = True
 
         body = self._physics_system.new_body(
@@ -219,16 +216,12 @@ class SpaceshipFactory:
 
                 if is_idle_sprite:
                     sprite.destroy()
-                    sprite = self._rendering_system.new_sprite(
-                        go, img_moving, transform
-                    )
+                    sprite = graphics.new_sprite(go, img_moving, transform)
                     is_idle_sprite = False
             else:
                 if not is_idle_sprite:
                     sprite.destroy()
-                    sprite = self._rendering_system.new_sprite(
-                        go, img_idle, transform
-                    )
+                    sprite = graphics.new_sprite(go, img_idle, transform)
                     is_idle_sprite = True
 
             if (

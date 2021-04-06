@@ -10,6 +10,8 @@ import pygame
 import game_objects
 from game_objects import GameObject
 
+import graphics
+
 from extra_bullets import ExtraBulletFactory
 from extra_heart import ExtraHeartFactory
 from game_object_coroutine import GameObjectCoroutine, resume_after
@@ -17,7 +19,6 @@ from game_time import GameTime
 from hittable import Hittable
 from physics import PhysicsSystem, Collision
 from player import Player
-from rendering import RenderingSystem
 from transform import Transform
 from utils import first_where
 
@@ -29,14 +30,12 @@ class AsteroidFactory:
     def __init__(
         self,
         physics_system: PhysicsSystem,
-        rendering_system: RenderingSystem,
         explosion_factory: "_ExplosionFactory",
         provide_asteroid_images,
         extra_heart_factory: ExtraHeartFactory,
         extra_bullet_factory: ExtraBulletFactory,
     ):
         self._physics_system = physics_system
-        self._rendering_system = rendering_system
         self._explosion_factory = explosion_factory
         self._provide_asteroid_images = provide_asteroid_images
         self._extra_heart_factory = extra_heart_factory
@@ -58,7 +57,7 @@ class AsteroidFactory:
         transform.set_local_y(y)
 
         # Sprite
-        self._rendering_system.new_sprite(
+        graphics.new_sprite(
             game_object,
             pygame.transform.scale(
                 random.choice(self._provide_asteroid_images()), (50, 50)
@@ -176,11 +175,9 @@ class _ExplosionFactory:
 
     def __init__(
         self,
-        rendering_system: RenderingSystem,
         game_time: GameTime,
         provide_explosion_images,
     ):
-        self._rendering_system = rendering_system
         self._game_time = game_time
         self._provide_explosion_images = provide_explosion_images
 
@@ -194,7 +191,7 @@ class _ExplosionFactory:
 
         def animation():
             for i in range(25):
-                sprite = self._rendering_system.new_sprite(
+                sprite = graphics.new_sprite(
                     game_object, explosion_images[i], transform
                 )
                 yield resume_after(self._game_time, delay_ms=20)

@@ -8,9 +8,11 @@ import pygame
 import game_objects
 from game_objects import GameObject
 
+import graphics
+from graphics import Sprite
+
 from physics import PhysicsSystem, TriggerCollider, TriggerEvent
 from player import Player
-from rendering import RenderingSystem, Sprite
 from transform import Transform
 from utils import first_where
 
@@ -31,13 +33,8 @@ class CollectableItemFactory:
     # pylint: disable=too-few-public-methods
     # This has to be a class to be injectable with Pinject.
 
-    def __init__(
-        self,
-        physics_system: PhysicsSystem,
-        rendering_system: RenderingSystem,
-    ):
+    def __init__(self, physics_system: PhysicsSystem):
         self._physics_system = physics_system
-        self._rendering_system = rendering_system
 
     def __call__(
         self,
@@ -60,7 +57,7 @@ class CollectableItemFactory:
         transform.set_local_x(x)
         transform.set_local_y(y)
 
-        sprite = self._rendering_system.new_sprite(
+        sprite = graphics.new_sprite(
             game_object=game_object,
             surface=image,
             transform=transform,
