@@ -59,11 +59,7 @@ def main():
     )
 
     make_asteroid_generator(
-        x=0,
-        y=0,
-        width=800,
-        height=600,
-        interval_ms=3000,
+        x=0, y=0, width=800, height=600, interval_ms=3000, initial_asteroids=10
     )
 
     _make_borders()

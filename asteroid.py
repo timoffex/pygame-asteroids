@@ -100,6 +100,7 @@ def make_asteroid_generator(
     width: float,
     height: float,
     interval_ms: float,
+    initial_asteroids: int = 0,
 ) -> GameObject:
     """Creates an asteroid generator that randomly spawns asteroids in
     the rectangular region with the top-left corner at (x, y) and the
@@ -109,15 +110,21 @@ def make_asteroid_generator(
 
     game_object = game_objects.new_object()
 
+    def spawn_asteroid():
+        make_asteroid(
+            x=random.uniform(x, x + width),
+            y=random.uniform(y, y + height),
+            vx=random.gauss(0, 0.03),
+            vy=random.gauss(0, 0.03),
+        )
+
+    for _ in range(initial_asteroids):
+        spawn_asteroid()
+
     def generate_asteroids():
         while True:
-            make_asteroid(
-                x=random.uniform(x, x + width),
-                y=random.uniform(y, y + height),
-                vx=random.gauss(0, 0.03),
-                vy=random.gauss(0, 0.03),
-            )
             yield resume_after(delay_ms=interval_ms)
+            spawn_asteroid()
 
     GameObjectCoroutine(game_object, generate_asteroids()).start()
 
