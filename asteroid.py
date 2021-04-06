@@ -18,7 +18,10 @@ from transform import Transform
 from utils import first_where
 
 
-_asteroid_images = [pygame.image.load("images/asteroid.png").convert_alpha()]
+_asteroid_image = pygame.image.load("images/asteroid.png").convert_alpha()
+_asteroid_initial_image = pygame.image.load(
+    "images/asteroid_initial.png"
+).convert_alpha()
 
 
 def make_asteroid(
@@ -37,11 +40,22 @@ def make_asteroid(
     transform.set_local_y(y)
 
     # Sprite
-    graphics.new_sprite(
+    sprite = graphics.new_sprite(
         game_object,
-        pygame.transform.scale(random.choice(_asteroid_images), (50, 50)),
+        pygame.transform.scale(_asteroid_initial_image, (50, 50)),
         transform,
     )
+
+    # Make the asteroid hurtful after some time, updating its sprite
+    hurtful = False
+
+    def become_hurtful():
+        yield resume_after(delay_ms=500)
+        nonlocal hurtful
+        hurtful = True
+        sprite.surface = pygame.transform.scale(_asteroid_image, (50, 50))
+
+    GameObjectCoroutine(game_object, become_hurtful()).start()
 
     # Physics body with a circle collider
     body = physics.new_body(
@@ -49,8 +63,11 @@ def make_asteroid(
     )
     body.add_circle_collider(radius=25)
 
-    # Collision hook to damage player
+    # Collision hook to damage player, if the asteroid is hurtful
     def on_collision(collision: Collision):
+        if not hurtful:
+            return
+
         player = first_where(
             lambda x: isinstance(x, Player),
             collision.body_other.get_data(),
