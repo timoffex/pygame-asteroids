@@ -1,6 +1,6 @@
 """This module defines a factory to spawn collectable ammo drops."""
 
-from collectable_item import CollectableItemFactory
+from collectable_item import make_collectable_item
 from player import Player
 
 
@@ -10,12 +10,7 @@ class ExtraBulletFactory:
     # pylint: disable=too-few-public-methods
     # This has to be a class to be injectable with Pinject.
 
-    def __init__(
-        self,
-        collectable_item_factory: CollectableItemFactory,
-        provide_extra_bullets_image,
-    ):
-        self._collectable_item_factory = collectable_item_factory
+    def __init__(self, provide_extra_bullets_image):
         self._provide_extra_bullets_image = provide_extra_bullets_image
 
     def __call__(self, x: float, y: float, amount: int):
@@ -27,7 +22,7 @@ class ExtraBulletFactory:
         def player_collect(player: Player):
             player.bullets += amount
 
-        self._collectable_item_factory(
+        make_collectable_item(
             x=x,
             y=y,
             image=self._provide_extra_bullets_image(),
